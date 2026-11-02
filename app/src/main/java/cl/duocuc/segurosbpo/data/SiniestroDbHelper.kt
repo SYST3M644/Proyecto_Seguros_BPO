@@ -436,7 +436,7 @@ class SiniestroDbHelper(
             val id = db.insertOrThrow("siniestros", null, valores)
             val anio = SimpleDateFormat("yy", Locale.ROOT).format(Date())
             val numero = "SIN-$anio-${(id + 4860).toString().padStart(6, '0')}"
-            db.execSQL("UPDATE siniestros SET numero = ? WHERE id = ?", arrayOf(numero, id))
+            db.execSQL("UPDATE siniestros SET numero = ? WHERE id = ?", arrayOf<Any>(numero, id))
             insertarGestion(
                 db, id, "Asegurado", "Reporte registrado con número " + numero, true,
                 AUTOR_ASEGURADO
