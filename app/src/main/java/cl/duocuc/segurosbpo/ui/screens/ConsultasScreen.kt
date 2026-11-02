@@ -36,6 +36,9 @@ import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import kotlinx.coroutines.launch
 import cl.duocuc.segurosbpo.ui.theme.Dimens
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import cl.duocuc.segurosbpo.ui.preview.Muestras
+import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -156,5 +159,19 @@ fun ConsultasScreen(
         }
         AvisoSuperior(aviso)
         }
+    }
+}
+
+@Preview(showBackground = true, heightDp = 1000)
+@Composable
+internal fun ConsultasScreenPreview() {
+    SegurosBpoTheme {
+        ConsultasScreen(
+            siniestro = Muestras.siniestroEnEvaluacion,
+            consultas = Muestras.consultas,
+            onCargar = {},
+            onEnviar = { null },
+            onVolver = {}
+        )
     }
 }

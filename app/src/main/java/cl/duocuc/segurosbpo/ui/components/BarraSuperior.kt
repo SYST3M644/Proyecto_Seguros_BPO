@@ -12,6 +12,8 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import cl.duocuc.segurosbpo.R
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import androidx.compose.ui.tooling.preview.Preview
 
 data class AccionesBarra(
     val temaOscuro: Boolean = false,
@@ -66,4 +68,20 @@ fun BarraSuperior(
             )
         } else TopAppBarDefaults.topAppBarColors()
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+internal fun BarraSuperiorPreview() {
+    SegurosBpoTheme {
+        BarraSuperior(titulo = "Detalle del siniestro", onVolver = {})
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+internal fun BarraSuperiorDestacadaPreview() {
+    SegurosBpoTheme {
+        BarraSuperior(titulo = "Reportar un siniestro", destacada = true)
+    }
 }

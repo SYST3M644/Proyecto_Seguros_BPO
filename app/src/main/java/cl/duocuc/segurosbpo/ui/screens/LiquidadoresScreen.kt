@@ -36,6 +36,9 @@ import cl.duocuc.segurosbpo.ui.components.AvatarCuenta
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import kotlinx.coroutines.launch
 import cl.duocuc.segurosbpo.ui.theme.Dimens
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import cl.duocuc.segurosbpo.ui.preview.Muestras
+import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -183,5 +186,17 @@ fun LiquidadoresScreen(
             }
             AvisoSuperior(aviso)
         }
+    }
+}
+
+@Preview(showBackground = true, heightDp = 1200)
+@Composable
+internal fun LiquidadoresScreenPreview() {
+    SegurosBpoTheme {
+        LiquidadoresScreen(
+            liquidadores = listOf(Muestras.liquidadora, Muestras.liquidador),
+            carga = Muestras.cargaPorPersona,
+            onCrear = { _, _, _ -> null }
+        )
     }
 }

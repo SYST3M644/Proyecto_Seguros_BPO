@@ -39,6 +39,9 @@ import cl.duocuc.segurosbpo.ui.components.AvatarCuenta
 import cl.duocuc.segurosbpo.ui.components.AvatarImagen
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.theme.Dimens
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import cl.duocuc.segurosbpo.ui.preview.Muestras
+import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -223,5 +226,19 @@ private fun DatoPerfil(etiqueta: String, valor: String) {
     Column {
         Text(etiqueta, style = MaterialTheme.typography.labelMedium)
         Text(valor, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+@Preview(showBackground = true, heightDp = 900)
+@Composable
+internal fun PerfilCuentaScreenPreview() {
+    SegurosBpoTheme {
+        PerfilCuentaScreen(
+            cuenta = Muestras.asegurada,
+            onGuardarFoto = { null },
+            onEditar = {},
+            onVolver = {},
+            onCerrarSesion = {}
+        )
     }
 }

@@ -16,6 +16,9 @@ import androidx.compose.ui.Modifier
 import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.ui.components.ResumenGraficosCasos
 import cl.duocuc.segurosbpo.ui.theme.Dimens
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import cl.duocuc.segurosbpo.ui.preview.Muestras
+import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,5 +39,13 @@ fun EstadisticasAseguradoScreen(
                 descripcion = "Siniestros registrados"
             )
         }
+    }
+}
+
+@Preview(showBackground = true, heightDp = 1000)
+@Composable
+internal fun EstadisticasAseguradoScreenPreview() {
+    SegurosBpoTheme {
+        EstadisticasAseguradoScreen(siniestros = Muestras.siniestros, onVolver = {})
     }
 }

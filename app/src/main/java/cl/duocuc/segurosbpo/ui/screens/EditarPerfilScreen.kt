@@ -30,6 +30,9 @@ import cl.duocuc.segurosbpo.model.ValidadorContacto
 import cl.duocuc.segurosbpo.model.ValidadorRut
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.theme.Dimens
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import cl.duocuc.segurosbpo.ui.preview.Muestras
+import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -159,5 +162,17 @@ fun EditarPerfilScreen(
                 )
             }
         }
+    }
+}
+
+@Preview(showBackground = true, heightDp = 900)
+@Composable
+internal fun EditarPerfilScreenPreview() {
+    SegurosBpoTheme {
+        EditarPerfilScreen(
+            cuenta = Muestras.asegurada,
+            onGuardar = { _, _ -> null },
+            onVolver = {}
+        )
     }
 }

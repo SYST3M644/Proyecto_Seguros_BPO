@@ -33,6 +33,9 @@ import cl.duocuc.segurosbpo.ui.components.BuscadorCasos
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import kotlinx.coroutines.launch
 import cl.duocuc.segurosbpo.ui.theme.Dimens
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import cl.duocuc.segurosbpo.ui.preview.Muestras
+import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,5 +100,17 @@ fun DisponiblesLiquidadorScreen(
         }
         AvisoSuperior(aviso)
         }
+    }
+}
+
+@Preview(showBackground = true, heightDp = 800)
+@Composable
+internal fun DisponiblesLiquidadorScreenPreview() {
+    SegurosBpoTheme {
+        DisponiblesLiquidadorScreen(
+            liquidador = Liquidador.VEHICULOS,
+            disponibles = listOf(Muestras.siniestroRecibido),
+            onTomarCaso = { null }
+        )
     }
 }

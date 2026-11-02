@@ -25,6 +25,9 @@ import androidx.compose.ui.res.stringResource
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.model.AvisoSiniestro
 import cl.duocuc.segurosbpo.ui.theme.Dimens
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import cl.duocuc.segurosbpo.ui.preview.Muestras
+import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,5 +93,20 @@ fun AvisosScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, heightDp = 900)
+@Composable
+internal fun AvisosScreenPreview() {
+    SegurosBpoTheme {
+        AvisosScreen(
+            avisos = Muestras.avisos,
+            onCargar = {},
+            onMarcarLeido = {},
+            onAbrirCaso = {},
+            onAdjuntar = {},
+            onVolver = {}
+        )
     }
 }

@@ -45,6 +45,9 @@ import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import kotlinx.coroutines.launch
 import cl.duocuc.segurosbpo.ui.theme.Dimens
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import cl.duocuc.segurosbpo.ui.preview.Muestras
+import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -409,5 +412,29 @@ private fun Dato(etiqueta: String, valor: String) {
     ) {
         Text(etiqueta, style = MaterialTheme.typography.bodySmall)
         Text(valor, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Preview(showBackground = true, heightDp = 1600)
+@Composable
+internal fun GestionCasoScreenPreview() {
+    SegurosBpoTheme {
+        GestionCasoScreen(
+            caso = Muestras.siniestroEnEvaluacion,
+            gestiones = Muestras.gestiones,
+            solicitudes = Muestras.solicitudes,
+            consultas = Muestras.consultas,
+            seguimientoVencido = true,
+            onCargar = {},
+            onRegistrarGestion = { _, _, _ -> null },
+            onSolicitarDocumento = { _, _, _ -> null },
+            onAvanzar = { _, _, _ -> null },
+            onCerrarAnticipado = { _, _, _ -> null },
+            onResponderConsulta = { _, _ -> null },
+            onMarcarRecibida = { null },
+            onAnularSolicitud = { null },
+            onVerDocumentos = {},
+            onVolver = {}
+        )
     }
 }

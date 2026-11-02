@@ -21,6 +21,9 @@ import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.theme.Dimens
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import cl.duocuc.segurosbpo.ui.preview.Muestras
+import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,5 +90,18 @@ private fun Linea(etiqueta: String, valor: String) {
     ) {
         Text(etiqueta, style = MaterialTheme.typography.bodySmall)
         Text(valor, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Preview(showBackground = true, heightDp = 800)
+@Composable
+internal fun CargaEquiposScreenPreview() {
+    SegurosBpoTheme {
+        CargaEquiposScreen(
+            carga = Muestras.cargaPorEquipo,
+            pendientes = listOf(Muestras.siniestroRecibido),
+            actualizadoEn = Muestras.FECHA_HORA,
+            onCargar = {}
+        )
     }
 }

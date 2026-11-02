@@ -62,6 +62,9 @@ import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.model.SolicitudDocumento
 import kotlinx.coroutines.launch
 import cl.duocuc.segurosbpo.ui.theme.Dimens
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import cl.duocuc.segurosbpo.ui.preview.Muestras
+import androidx.compose.ui.tooling.preview.Preview
 
 private data class AdjuntoPendiente(
     val clave: Long,
@@ -626,5 +629,25 @@ private fun BloqueEvidencias(titulo: String, contenido: @Composable () -> Unit) 
             Text(titulo, style = MaterialTheme.typography.titleMedium)
             contenido()
         }
+    }
+}
+
+@Preview(showBackground = true, heightDp = 1200)
+@Composable
+internal fun EvidenciasScreenPreview() {
+    SegurosBpoTheme {
+        EvidenciasScreen(
+            siniestro = Muestras.siniestroEnEvaluacion,
+            asegurado = Asegurado.CAMILA,
+            evidencias = Muestras.evidencias,
+            solicitudes = Muestras.solicitudes,
+            onVolver = {},
+            onCargar = {},
+            onCargarImagen = { null },
+            onCargarMiniatura = { null },
+            onGuardarFoto = { _, _ -> null },
+            onGuardarArchivo = { _, _ -> null },
+            onEliminar = { null }
+        )
     }
 }

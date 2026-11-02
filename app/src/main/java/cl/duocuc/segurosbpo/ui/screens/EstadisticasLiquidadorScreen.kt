@@ -21,6 +21,9 @@ import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.ResumenGraficosCasos
 import cl.duocuc.segurosbpo.ui.theme.Dimens
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import cl.duocuc.segurosbpo.ui.preview.Muestras
+import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,5 +69,19 @@ private fun Indicador(etiqueta: String, valor: Int) {
     Column {
         Text(etiqueta, style = MaterialTheme.typography.labelMedium)
         Text(valor.toString(), style = MaterialTheme.typography.headlineSmall)
+    }
+}
+
+@Preview(showBackground = true, heightDp = 1000)
+@Composable
+internal fun EstadisticasLiquidadorScreenPreview() {
+    SegurosBpoTheme {
+        EstadisticasLiquidadorScreen(
+            liquidador = Liquidador.VEHICULOS,
+            responsable = "Maria P. Lagos",
+            casos = Muestras.siniestros,
+            disponibles = listOf(Muestras.siniestroRecibido),
+            seguimientosVencidos = setOf(1L)
+        )
     }
 }

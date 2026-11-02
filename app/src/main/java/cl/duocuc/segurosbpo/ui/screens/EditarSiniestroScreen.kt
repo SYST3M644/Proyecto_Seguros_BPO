@@ -23,6 +23,9 @@ import androidx.compose.ui.Modifier
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
 import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.ui.theme.Dimens
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import cl.duocuc.segurosbpo.ui.preview.Muestras
+import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,5 +59,17 @@ fun EditarSiniestroScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, heightDp = 700)
+@Composable
+internal fun EditarSiniestroScreenPreview() {
+    SegurosBpoTheme {
+        EditarSiniestroScreen(
+            siniestro = Muestras.siniestroRecibido,
+            onVolver = {},
+            onGuardar = {}
+        )
     }
 }

@@ -36,6 +36,8 @@ import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import kotlinx.coroutines.launch
 import cl.duocuc.segurosbpo.ui.theme.Dimens
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -230,5 +232,18 @@ fun CatalogoScreen(
             }
             AvisoSuperior(aviso)
         }
+    }
+}
+
+@Preview(showBackground = true, heightDp = 1600)
+@Composable
+internal fun CatalogoScreenPreview() {
+    SegurosBpoTheme {
+        CatalogoScreen(
+            companias = Compania.semilla,
+            tipos = TipoSiniestro.semilla,
+            onCrearCompania = { _, _ -> null },
+            onCrearTipo = { _, _, _ -> null }
+        )
     }
 }

@@ -1,6 +1,10 @@
 package cl.duocuc.segurosbpo.ui.preview
 
 import cl.duocuc.segurosbpo.model.Asegurado
+import cl.duocuc.segurosbpo.model.AvisoSiniestro
+import cl.duocuc.segurosbpo.model.Consulta
+import cl.duocuc.segurosbpo.model.EvaluacionCierre
+import cl.duocuc.segurosbpo.model.Gestion
 import cl.duocuc.segurosbpo.model.Compania
 import cl.duocuc.segurosbpo.model.CuentaLocal
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
@@ -132,4 +136,58 @@ object Muestras {
     )
 
     val evidencias = listOf(evidencia)
+
+    val gestiones = listOf(
+        Gestion(1, 1, FECHA_HORA, "Asegurado", "Reporte registrado con numero SIN-26-004861", true),
+        Gestion(2, 1, FECHA_HORA, "Analista de administracion", "Caso asignado a Maria P. Lagos, del equipo Vehiculos", true),
+        Gestion(3, 1, FECHA_HORA, "Maria P. Lagos", "Se solicito el presupuesto de reparacion.", true)
+    )
+
+    val consultaRespondida = Consulta(
+        id = 1,
+        siniestroId = 1,
+        pregunta = "Cuanto demora la revision del presupuesto?",
+        respuesta = "Entre tres y cinco dias habiles desde que lo recibimos.",
+        fechaPregunta = FECHA_HORA,
+        fechaRespuesta = FECHA_HORA
+    )
+
+    val consultaPendiente = Consulta(
+        id = 2,
+        siniestroId = 1,
+        pregunta = "Puedo llevar el auto a un taller de mi confianza?",
+        respuesta = null,
+        fechaPregunta = FECHA_HORA,
+        fechaRespuesta = null
+    )
+
+    val consultas = listOf(consultaRespondida, consultaPendiente)
+
+    val evaluacion = EvaluacionCierre(
+        siniestroId = 3,
+        nota = 4,
+        comentario = "La atencion fue clara y rapida.",
+        fecha = FECHA_HORA
+    )
+
+    val avisos = listOf(
+        AvisoSiniestro(
+            id = 1,
+            siniestroId = 1,
+            numeroSiniestro = "SIN-26-004861",
+            mensaje = "Necesitamos el documento: Presupuesto de reparacion",
+            fecha = FECHA_HORA,
+            leido = false,
+            solicitudId = 1,
+            documentoPedido = "Presupuesto de reparacion"
+        ),
+        AvisoSiniestro(
+            id = 2,
+            siniestroId = 1,
+            numeroSiniestro = "SIN-26-004861",
+            mensaje = "Tu caso quedo a cargo de Maria P. Lagos.",
+            fecha = FECHA_HORA,
+            leido = true
+        )
+    )
 }

@@ -49,6 +49,9 @@ import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import kotlinx.coroutines.launch
 import cl.duocuc.segurosbpo.ui.theme.Dimens
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import cl.duocuc.segurosbpo.ui.preview.Muestras
+import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -398,5 +401,47 @@ private fun DatoDetalle(etiqueta: String, valor: String) {
     ) {
         Text(etiqueta, style = MaterialTheme.typography.bodySmall)
         Text(valor, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Preview(showBackground = true, heightDp = 1400)
+@Composable
+internal fun DetalleSiniestroScreenPreview() {
+    SegurosBpoTheme {
+        DetalleSiniestroScreen(
+            siniestro = Muestras.siniestroEnEvaluacion,
+            solicitudes = Muestras.solicitudes,
+            consultasPendientes = 1,
+            evaluacion = null,
+            onCargarSolicitudes = {},
+            onVolver = {},
+            onEditar = {},
+            onEvidencias = {},
+            onHistorial = {},
+            onConsultas = {},
+            onDesistir = { null },
+            onGuardarEvaluacion = { _, _ -> null }
+        )
+    }
+}
+
+@Preview(showBackground = true, heightDp = 1400)
+@Composable
+internal fun DetalleSiniestroCerradoPreview() {
+    SegurosBpoTheme {
+        DetalleSiniestroScreen(
+            siniestro = Muestras.siniestroCerrado,
+            solicitudes = emptyList(),
+            consultasPendientes = 0,
+            evaluacion = Muestras.evaluacion,
+            onCargarSolicitudes = {},
+            onVolver = {},
+            onEditar = {},
+            onEvidencias = {},
+            onHistorial = {},
+            onConsultas = {},
+            onDesistir = { null },
+            onGuardarEvaluacion = { _, _ -> null }
+        )
     }
 }

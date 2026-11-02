@@ -21,6 +21,9 @@ import androidx.compose.ui.Modifier
 import cl.duocuc.segurosbpo.model.Gestion
 import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.ui.theme.Dimens
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import cl.duocuc.segurosbpo.ui.preview.Muestras
+import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,5 +62,18 @@ fun HistorialSiniestroScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, heightDp = 800)
+@Composable
+internal fun HistorialSiniestroScreenPreview() {
+    SegurosBpoTheme {
+        HistorialSiniestroScreen(
+            siniestro = Muestras.siniestroEnEvaluacion,
+            gestiones = Muestras.gestiones,
+            onCargar = {},
+            onVolver = {}
+        )
     }
 }

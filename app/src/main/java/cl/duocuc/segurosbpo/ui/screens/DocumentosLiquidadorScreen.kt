@@ -49,6 +49,9 @@ import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import kotlinx.coroutines.launch
 import cl.duocuc.segurosbpo.ui.theme.Dimens
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import cl.duocuc.segurosbpo.ui.preview.Muestras
+import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -242,5 +245,24 @@ fun DocumentosLiquidadorScreen(
         }
         AvisoSuperior(aviso)
         }
+    }
+}
+
+@Preview(showBackground = true, heightDp = 1100)
+@Composable
+internal fun DocumentosLiquidadorScreenPreview() {
+    SegurosBpoTheme {
+        DocumentosLiquidadorScreen(
+            siniestro = Muestras.siniestroEnEvaluacion,
+            evidencias = Muestras.evidencias,
+            onVolver = {},
+            onCargar = {},
+            onCargarImagen = { null },
+            onCargarMiniatura = { null },
+            onDescargar = { _, _ -> null },
+            onGuardarFoto = { _, _ -> null },
+            onGuardarArchivo = { _, _ -> null },
+            onEliminar = { null }
+        )
     }
 }
