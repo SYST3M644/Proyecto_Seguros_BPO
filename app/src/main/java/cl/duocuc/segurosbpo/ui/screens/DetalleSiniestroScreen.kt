@@ -34,6 +34,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.model.ControlPlazos
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
 import cl.duocuc.segurosbpo.model.EvaluacionCierre
@@ -63,6 +66,7 @@ fun DetalleSiniestroScreen(
     onDesistir: (String) -> String?,
     onGuardarEvaluacion: (Int, String) -> String?
 ) {
+    val textos = LocalContext.current
     val aviso = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var motivoDesistir by rememberSaveable(siniestro?.id) { mutableStateOf("") }
@@ -78,14 +82,14 @@ fun DetalleSiniestroScreen(
         val error = ValidadorDesistimiento.error(siniestro.etapa, motivoDesistir)
         AlertDialog(
             onDismissRequest = { pidiendoDesistir = false },
-            title = { Text("Desistir del siniestro") },
+            title = { Text(stringResource(R.string.titulo_desistir)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("El caso quedará cerrado y no podrás reactivarlo desde la aplicación.")
+                    Text(stringResource(R.string.aviso_desistir))
                     OutlinedTextField(
                         value = motivoDesistir,
                         onValueChange = { motivoDesistir = it },
-                        label = { Text("Motivo") },
+                        label = { Text(stringResource(R.string.campo_motivo)) },
                         minLines = 2,
                         isError = motivoDesistir.isNotEmpty() && error != null,
                         supportingText = { error?.let { Text(it) } },
@@ -101,19 +105,23 @@ fun DetalleSiniestroScreen(
                         pidiendoDesistir = false
                         if (resultado == null) motivoDesistir = ""
                         scope.launch {
-                            aviso.showSnackbar(resultado ?: "Desistimiento registrado")
+                            aviso.showSnackbar(
+                                resultado ?: textos.getString(R.string.msg_desistimiento_ok)
+                            )
                         }
                     }
-                ) { Text("Confirmar") }
+                ) { Text(stringResource(R.string.btn_confirmar)) }
             },
             dismissButton = {
-                TextButton(onClick = { pidiendoDesistir = false }) { Text("Cancelar") }
+                TextButton(onClick = { pidiendoDesistir = false }) {
+                    Text(stringResource(R.string.btn_cancelar))
+                }
             }
         )
     }
 
     Scaffold(
-        topBar = { BarraSuperior("Detalle del siniestro", onVolver = onVolver) }
+        topBar = { BarraSuperior(stringResource(R.string.titulo_detalle), onVolver = onVolver) }
     ) { margen ->
         Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
         Column(
@@ -122,7 +130,7 @@ fun DetalleSiniestroScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             if (siniestro == null) {
-                Text("No se encontró el siniestro de este asegurado")
+                Text(stringResource(R.string.vacio_siniestro_no_encontrado))
                 return@Column
             }
 
@@ -135,23 +143,26 @@ fun DetalleSiniestroScreen(
 
             CodigoSiniestro(siniestro.numero, estilo = MaterialTheme.typography.headlineSmall)
 
-            BloqueDetalle("Estado del caso") {
-                DatoDetalle("Etapa", siniestro.etapa.etiqueta)
-                DatoDetalle("Compañía", siniestro.compania.etiqueta)
-                DatoDetalle("Tipo", siniestro.tipo.etiqueta)
+            BloqueDetalle(stringResource(R.string.seccion_estado_caso)) {
+                DatoDetalle(stringResource(R.string.dato_etapa), siniestro.etapa.etiqueta)
+                DatoDetalle(stringResource(R.string.dato_compania), siniestro.compania.etiqueta)
+                DatoDetalle(stringResource(R.string.dato_tipo), siniestro.tipo.etiqueta)
                 DatoDetalle(
-                    "Liquidador",
+                    stringResource(R.string.dato_liquidador),
                     siniestro.liquidadorNombre
                         ?: siniestro.liquidadorAsignado?.let {
-                            "Equipo " + it.equipo + ", por asignar"
+                            stringResource(R.string.estado_equipo_por_asignar, it.equipo)
                         }
-                        ?: "Pendiente de asignación"
+                        ?: stringResource(R.string.estado_pendiente_asignacion)
                 )
-                DatoDetalle("Última actualización", siniestro.ultimaActualizacion)
+                DatoDetalle(
+                    stringResource(R.string.dato_ultima_actualizacion),
+                    siniestro.ultimaActualizacion
+                )
             }
 
             if (!cerrado) {
-                BloqueDetalle("Tiempo en esta etapa") {
+                BloqueDetalle(stringResource(R.string.seccion_tiempo_etapa)) {
                     LinearProgressIndicator(
                         progress = {
                             if (plazo.plazoDiasHabiles == 0) 0f
@@ -163,15 +174,20 @@ fun DetalleSiniestroScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                     DatoDetalle(
-                        "Días hábiles transcurridos",
-                        plazo.diasHabiles.toString() + " de " + plazo.plazoDiasHabiles
+                        stringResource(R.string.dato_dias_habiles),
+                        stringResource(
+                            R.string.valor_de_total,
+                            plazo.diasHabiles.toInt(), plazo.plazoDiasHabiles
+                        )
                     )
                     Text(
                         if (plazo.excedido)
-                            "La etapa superó el plazo estimado por " +
-                                siniestro.compania.etiqueta + ". Puedes enviar una consulta."
-                        else "Quedan " + plazo.diasRestantes +
-                            " día(s) hábil(es) del plazo estimado.",
+                            stringResource(
+                                R.string.aviso_plazo_excedido, siniestro.compania.etiqueta
+                            )
+                        else stringResource(
+                            R.string.aviso_plazo_restante, plazo.diasRestantes
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = if (plazo.excedido) MaterialTheme.colorScheme.error
                             else MaterialTheme.colorScheme.onSurfaceVariant
@@ -179,84 +195,103 @@ fun DetalleSiniestroScreen(
                 }
             }
 
-            BloqueDetalle("Datos del siniestro") {
-                DatoDetalle("Ocurrencia", siniestro.fechaOcurrencia)
-                DatoDetalle("Reporte", siniestro.fechaReporte)
-                DatoDetalle("Comuna", siniestro.comuna)
-                DatoDetalle("Terceros involucrados", if (siniestro.huboTerceros) "Sí" else "No")
+            BloqueDetalle(stringResource(R.string.seccion_datos_siniestro)) {
+                DatoDetalle(stringResource(R.string.dato_ocurrencia), siniestro.fechaOcurrencia)
+                DatoDetalle(stringResource(R.string.dato_reporte), siniestro.fechaReporte)
+                DatoDetalle(stringResource(R.string.dato_comuna), siniestro.comuna)
+                DatoDetalle(
+                    stringResource(R.string.dato_terceros),
+                    stringResource(
+                        if (siniestro.huboTerceros) R.string.valor_si else R.string.valor_no
+                    )
+                )
                 Text(siniestro.descripcion, style = MaterialTheme.typography.bodyMedium)
                 if (ValidadorSiniestro.reporteFueraDePlazo(
                         siniestro.fechaOcurrencia, siniestro.fechaReporte
                     )
                 ) {
                     Text(
-                        "Reporte fuera de plazo (más de 30 días desde el siniestro)",
+                        stringResource(R.string.aviso_fuera_de_plazo_detalle),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
             }
 
-            BloqueDetalle("Qué sigue") {
+            BloqueDetalle(stringResource(R.string.seccion_que_sigue)) {
                 if (pendientes.isNotEmpty()) {
                     Text(
-                        if (pendientes.size == 1) "Tienes 1 documento pendiente por entregar."
-                        else "Tienes " + pendientes.size + " documentos pendientes por entregar.",
+                        if (pendientes.size == 1)
+                            stringResource(R.string.aviso_un_pendiente)
+                        else stringResource(R.string.aviso_varios_pendientes, pendientes.size),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.titleSmall
                     )
                     pendientes.forEach { solicitud ->
-                        Text("· " + solicitud.tipo, style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            stringResource(R.string.item_lista, solicitud.tipo),
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
                 Text(
                     if (pendientes.isNotEmpty())
-                        "Adjunta los documentos solicitados para que tu caso pueda continuar."
+                        stringResource(R.string.paso_adjunta_documentos)
                     else when (siniestro.etapa) {
                         EtapaSiniestro.RECIBIDO ->
-                            "Estamos revisando tu reporte para asignarlo a un liquidador."
+                            stringResource(R.string.proximo_paso_recibido)
                         EtapaSiniestro.EVALUACION ->
-                            "El liquidador está revisando tu caso. Te avisaremos si necesitamos documentos."
+                            stringResource(R.string.paso_evaluacion)
                         EtapaSiniestro.LIQUIDACION ->
-                            "Estamos definiendo la resolución con tu compañía de seguros."
+                            stringResource(R.string.paso_liquidacion)
                         EtapaSiniestro.CERRADO ->
-                            "Tu caso terminó. Revisa el resultado registrado."
+                            stringResource(R.string.paso_cerrado)
                     }
                 )
             }
 
-            BloqueDetalle("Documentos habituales para este tipo de caso") {
+            BloqueDetalle(stringResource(R.string.seccion_documentos_habituales)) {
                 siniestro.tipo.documentosHabituales.forEach { documento ->
-                    Text("· " + documento, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        stringResource(R.string.item_lista, documento),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
                 Text(
-                    "El liquidador puede solicitar otros documentos según la revisión.",
+                    stringResource(R.string.ayuda_otros_documentos),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
 
             if (cerrado) {
-                BloqueDetalle("Resultado") {
-                    DatoDetalle("Resultado", siniestro.resultadoCierre ?: "No informado")
+                BloqueDetalle(stringResource(R.string.seccion_resultado)) {
+                    DatoDetalle(
+                        stringResource(R.string.seccion_resultado),
+                        siniestro.resultadoCierre
+                            ?: stringResource(R.string.valor_no_informado)
+                    )
                     Text(
-                        siniestro.mensajeCierre ?: "Sin mensaje de cierre",
+                        siniestro.mensajeCierre ?: stringResource(R.string.valor_sin_mensaje_cierre),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
 
-                BloqueDetalle("Evaluación de la atención") {
+                BloqueDetalle(stringResource(R.string.seccion_evaluacion)) {
                     if (evaluacion != null) {
-                        DatoDetalle("Nota registrada", evaluacion.nota.toString() + " de 5")
+                        DatoDetalle(
+                            stringResource(R.string.dato_nota),
+                            stringResource(R.string.valor_nota, evaluacion.nota)
+                        )
                         if (!evaluacion.comentario.isNullOrBlank()) {
                             Text(evaluacion.comentario, style = MaterialTheme.typography.bodyMedium)
                         }
                         Text(
-                            "Evaluado el " + evaluacion.fecha,
+                            stringResource(R.string.etiqueta_evaluado_el, evaluacion.fecha),
                             style = MaterialTheme.typography.bodySmall
                         )
                     } else {
                         Text(
-                            "¿Cómo evalúas la atención de tu caso?",
+                            stringResource(R.string.pregunta_evaluacion),
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Row(
@@ -274,7 +309,7 @@ fun DetalleSiniestroScreen(
                         OutlinedTextField(
                             value = comentario,
                             onValueChange = { comentario = it },
-                            label = { Text("Comentario (opcional)") },
+                            label = { Text(stringResource(R.string.campo_comentario_opcional)) },
                             minLines = 2,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -284,45 +319,55 @@ fun DetalleSiniestroScreen(
                             onClick = {
                                 val error = onGuardarEvaluacion(nota, comentario)
                                 scope.launch {
-                                    aviso.showSnackbar(error ?: "Gracias por tu evaluación")
+                                    aviso.showSnackbar(
+                                        error
+                                            ?: textos.getString(
+                                                R.string.msg_gracias_evaluacion
+                                            )
+                                    )
                                 }
                             }
-                        ) { Text("Enviar evaluación") }
+                        ) { Text(stringResource(R.string.btn_enviar_evaluacion)) }
                     }
                 }
             }
 
-            BloqueDetalle("Acciones") {
+            BloqueDetalle(stringResource(R.string.seccion_acciones)) {
                 OutlinedButton(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onEvidencias
-                ) { Text("Documentos y evidencias") }
+                ) { Text(stringResource(R.string.btn_documentos_evidencias)) }
                 OutlinedButton(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onConsultas
                 ) {
                     Text(
                         if (consultasPendientes > 0)
-                            "Consultas (" + consultasPendientes + " sin responder)"
-                        else "Consultas del caso"
+                            stringResource(
+                                R.string.btn_consultas_pendientes, consultasPendientes
+                            )
+                        else stringResource(R.string.btn_consultas_caso)
                     )
                 }
                 OutlinedButton(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onHistorial
-                ) { Text("Historial de gestiones") }
+                ) { Text(stringResource(R.string.btn_historial)) }
                 if (siniestro.etapa == EtapaSiniestro.RECIBIDO) {
                     OutlinedButton(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = onEditar
-                    ) { Text("Corregir descripción") }
+                    ) { Text(stringResource(R.string.btn_corregir_descripcion)) }
                 }
                 if (!cerrado) {
                     TextButton(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = { pidiendoDesistir = true }
                     ) {
-                        Text("Desistir del siniestro", color = MaterialTheme.colorScheme.error)
+                        Text(
+                            stringResource(R.string.titulo_desistir),
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
                 }
             }
