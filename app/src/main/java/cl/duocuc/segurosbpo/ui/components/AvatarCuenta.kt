@@ -3,6 +3,7 @@ package cl.duocuc.segurosbpo.ui.components
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
@@ -15,7 +16,9 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.tooling.preview.Preview
 import cl.duocuc.segurosbpo.R
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @Composable
@@ -64,4 +67,17 @@ fun AvatarImagen(
             .clip(CircleShape)
             .border(Dimens.bordeAvatar, MaterialTheme.colorScheme.surface, CircleShape)
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+internal fun AvatarCuentaPreview() {
+    SegurosBpoTheme {
+        AvatarCuenta(
+            foto = null,
+            descripcion = "Foto de perfil",
+            modifier = Modifier.padding(Dimens.espacioMedio),
+            tamano = Dimens.tamanoAvatarLista
+        )
+    }
 }

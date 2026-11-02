@@ -40,7 +40,10 @@ import cl.duocuc.segurosbpo.model.coincideCon
 import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.BuscadorCasos
 import cl.duocuc.segurosbpo.ui.components.FiltroEtapas
+import androidx.compose.ui.tooling.preview.Preview
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
+import cl.duocuc.segurosbpo.ui.preview.Muestras
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import kotlinx.coroutines.launch
 import cl.duocuc.segurosbpo.ui.theme.Dimens
@@ -180,5 +183,24 @@ fun CasosLiquidadorScreen(
         }
         AvisoSuperior(aviso)
         }
+    }
+}
+
+@Preview(showBackground = true, heightDp = 720)
+@Composable
+internal fun CasosLiquidadorScreenPreview() {
+    SegurosBpoTheme {
+        CasosLiquidadorScreen(
+            liquidador = Liquidador.VEHICULOS,
+            responsable = "María P. Lagos",
+            casos = Muestras.siniestros,
+            archivados = emptyList(),
+            seguimientosVencidos = setOf(1L),
+            novedades = mapOf(1L to 2),
+            onCargarArchivados = {},
+            onArchivar = { null },
+            onRestaurar = { null },
+            onGestionar = {}
+        )
     }
 }

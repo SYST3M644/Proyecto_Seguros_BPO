@@ -7,6 +7,7 @@ import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -22,7 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.tooling.preview.Preview
 import cl.duocuc.segurosbpo.R
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 import kotlinx.coroutines.delay
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 
@@ -71,4 +74,12 @@ private fun copiarCodigo(contexto: Context, numero: String) {
     val portapapeles = contexto.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
         ?: return
     portapapeles.setPrimaryClip(ClipData.newPlainText("Número de siniestro", numero))
+}
+
+@Preview(showBackground = true)
+@Composable
+internal fun CodigoSiniestroPreview() {
+    SegurosBpoTheme {
+        CodigoSiniestro(numero = "SIN-26-004861", modifier = Modifier.padding(Dimens.espacioMedio))
+    }
 }

@@ -20,7 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import cl.duocuc.segurosbpo.ui.components.AvatarCuenta
+import androidx.compose.ui.tooling.preview.Preview
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
+import cl.duocuc.segurosbpo.ui.preview.Muestras
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.model.ValidadorRut
 import cl.duocuc.segurosbpo.model.CuentaLocal
@@ -131,5 +134,13 @@ private fun TarjetaUsuario(
                 Text(detalle, style = MaterialTheme.typography.bodySmall)
             }
         }
+    }
+}
+
+@Preview(showBackground = true, heightDp = 720)
+@Composable
+internal fun SeleccionUsuarioScreenPreview() {
+    SegurosBpoTheme {
+        SeleccionUsuarioScreen(usuarios = Muestras.cuentas, onSeleccionar = {})
     }
 }

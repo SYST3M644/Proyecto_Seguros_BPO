@@ -26,7 +26,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import cl.duocuc.segurosbpo.R
+import cl.duocuc.segurosbpo.ui.preview.Muestras
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 import cl.duocuc.segurosbpo.ui.components.AvatarCuenta
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import cl.duocuc.segurosbpo.ui.components.EtiquetaInteres
@@ -149,5 +152,39 @@ fun MisSiniestrosScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, heightDp = 720)
+@Composable
+internal fun MisSiniestrosScreenPreview() {
+    SegurosBpoTheme {
+        MisSiniestrosScreen(
+            asegurado = Asegurado.CAMILA,
+            fotoCuenta = null,
+            actualizadoEn = Muestras.FECHA_HORA,
+            siniestros = Muestras.siniestros,
+            busqueda = "",
+            onBuscar = {},
+            onVerDetalle = {},
+            onNuevoReporte = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, heightDp = 720)
+@Composable
+internal fun MisSiniestrosVacioPreview() {
+    SegurosBpoTheme {
+        MisSiniestrosScreen(
+            asegurado = Asegurado.CAMILA,
+            fotoCuenta = null,
+            actualizadoEn = Muestras.FECHA_HORA,
+            siniestros = emptyList(),
+            busqueda = "",
+            onBuscar = {},
+            onVerDetalle = {},
+            onNuevoReporte = {}
+        )
     }
 }

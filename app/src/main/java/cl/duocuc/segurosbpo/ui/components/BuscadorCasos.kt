@@ -2,7 +2,9 @@ package cl.duocuc.segurosbpo.ui.components
 
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.FilterChip
@@ -11,7 +13,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @Composable
@@ -55,5 +59,20 @@ fun FiltroEtapas(
             )
         }
         extra()
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+internal fun BuscadorCasosPreview() {
+    SegurosBpoTheme {
+        Column(Modifier.padding(Dimens.espacioMedio)) {
+            BuscadorCasos(texto = "choque", onTexto = {})
+            FiltroEtapas(
+                etapas = EtapaSiniestro.entries,
+                seleccionada = EtapaSiniestro.EVALUACION,
+                onSeleccionar = {}
+            )
+        }
     }
 }
