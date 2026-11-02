@@ -9,15 +9,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.EstadisticasCasos
 import cl.duocuc.segurosbpo.model.PuntoEstadistico
 import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @Composable
 private fun GraficoFilasEstadisticas(puntos: List<PuntoEstadistico>) {
     val maximo = maxOf(1, puntos.maxOfOrNull { it.cantidad } ?: 1)
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)) {
         puntos.forEach { punto ->
             Text(
                 punto.etiqueta + ": " + punto.cantidad,

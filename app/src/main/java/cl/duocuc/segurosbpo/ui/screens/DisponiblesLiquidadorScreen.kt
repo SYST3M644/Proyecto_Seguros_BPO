@@ -24,7 +24,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.model.coincideCon
@@ -33,6 +32,7 @@ import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.BuscadorCasos
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import kotlinx.coroutines.launch
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,8 +51,8 @@ fun DisponiblesLiquidadorScreen(
         Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(Dimens.espacioMedio),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
         ) {
             Text(
                 "Sin asignar en " + liquidador.equipo,
@@ -77,8 +77,8 @@ fun DisponiblesLiquidadorScreen(
             visibles.forEach { disponible ->
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(
-                        Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        Modifier.padding(Dimens.espacioTarjeta),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
                     ) {
                         CodigoSiniestro(disponible.numero)
                         Text(disponible.tipo.etiqueta)

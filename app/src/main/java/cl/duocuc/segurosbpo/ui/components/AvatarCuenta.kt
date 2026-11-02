@@ -15,7 +15,6 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 
@@ -61,7 +60,7 @@ fun AvatarImagen(
         contentScale = ContentScale.Crop,
         modifier = modifier
             .size(tamano)
-            .shadow(elevation = 6.dp, shape = CircleShape)
+            .shadow(elevation = Dimens.elevacionAvatar, shape = CircleShape)
             .clip(CircleShape)
             .border(Dimens.bordeAvatar, MaterialTheme.colorScheme.surface, CircleShape)
     )

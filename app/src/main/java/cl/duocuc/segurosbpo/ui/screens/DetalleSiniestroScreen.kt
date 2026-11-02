@@ -33,7 +33,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import cl.duocuc.segurosbpo.R
@@ -49,6 +48,7 @@ import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import kotlinx.coroutines.launch
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,7 +84,7 @@ fun DetalleSiniestroScreen(
             onDismissRequest = { pidiendoDesistir = false },
             title = { Text(stringResource(R.string.titulo_desistir)) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)) {
                     Text(stringResource(R.string.aviso_desistir))
                     OutlinedTextField(
                         value = motivoDesistir,
@@ -126,8 +126,8 @@ fun DetalleSiniestroScreen(
         Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(Dimens.espacioMedio),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
         ) {
             if (siniestro == null) {
                 Text(stringResource(R.string.vacio_siniestro_no_encontrado))
@@ -295,7 +295,7 @@ fun DetalleSiniestroScreen(
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(Dimens.espacioCorto),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             (1..5).forEach { valor ->
@@ -381,8 +381,8 @@ fun DetalleSiniestroScreen(
 private fun BloqueDetalle(titulo: String, contenido: @Composable () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
-            Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            Modifier.padding(Dimens.espacioMedio),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
         ) {
             Text(titulo, style = MaterialTheme.typography.titleMedium)
             contenido()

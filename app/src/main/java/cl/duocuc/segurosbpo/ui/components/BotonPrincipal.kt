@@ -18,11 +18,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.style.estiloAltoBoton
 import cl.duocuc.segurosbpo.ui.style.EstilosBotones
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 
 @Composable
@@ -62,11 +62,11 @@ internal fun BotonPrincipalPreview() {
     SegurosBpoTheme {
         var pulsaciones by remember { mutableStateOf(0) }
         val pulsar = { pulsaciones += 1 }
-        Column(Modifier.padding(16.dp)) {
+        Column(Modifier.padding(Dimens.espacioMedio)) {
             BotonPrincipal(texto = "Registrarme", onClick = pulsar, modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.size(8.dp))
+            Spacer(Modifier.size(Dimens.espacioChico))
             BotonPrincipal(texto = "Con ícono", onClick = pulsar, icono = R.drawable.ic_check, modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.size(8.dp))
+            Spacer(Modifier.size(Dimens.espacioChico))
             BotonPrincipal(texto = "Deshabilitado", onClick = pulsar, habilitado = false, modifier = Modifier.fillMaxWidth())
             Text("Pulsaciones: " + pulsaciones)
         }

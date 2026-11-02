@@ -26,7 +26,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.components.AvatarCuenta
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
@@ -35,6 +34,7 @@ import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.model.ValidadorRut
 import cl.duocuc.segurosbpo.model.ValidadorSiniestro
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,8 +60,8 @@ fun MisSiniestrosScreen(
         }
     ) { margen ->
         Column(
-            Modifier.fillMaxSize().padding(margen).imePadding().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            Modifier.fillMaxSize().padding(margen).imePadding().padding(Dimens.espacioMedio),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
         ) {
             Text(
                 stringResource(R.string.titulo_seguimiento),
@@ -69,14 +69,14 @@ fun MisSiniestrosScreen(
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
             ) {
                 AvatarCuenta(
                     foto = fotoCuenta,
                     descripcion = stringResource(R.string.cd_foto_asegurado),
-                    tamano = 56.dp
+                    tamano = Dimens.tamanoAdjunto
                 )
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Dimens.espacioMini)) {
                     Text(stringResource(R.string.etiqueta_asegurado_actual, asegurado.etiqueta))
                     Text(
                         stringResource(R.string.etiqueta_rut, ValidadorRut.ocultar(asegurado.rut)),
@@ -102,7 +102,7 @@ fun MisSiniestrosScreen(
                 exit = fadeOut()
             ) {
                 Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(20.dp)) {
+                    Column(Modifier.padding(Dimens.espacioPantalla)) {
                         Text(stringResource(
                             if (busqueda.isBlank()) R.string.vacio_sin_siniestros
                             else R.string.vacio_sin_coincidencias
@@ -115,10 +115,10 @@ fun MisSiniestrosScreen(
                 }
             }
             if (siniestros.isNotEmpty()) {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.espacioJusto)) {
                     items(siniestros, key = { it.id }) { siniestro ->
                         Card(onClick = { onVerDetalle(siniestro.id) }, modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                            Column(Modifier.padding(Dimens.espacioMedio), verticalArrangement = Arrangement.spacedBy(Dimens.espacioApretado)) {
                                 CodigoSiniestro(siniestro.numero)
                                 Text(siniestro.compania.etiqueta)
                                 Text(siniestro.tipo.etiqueta)

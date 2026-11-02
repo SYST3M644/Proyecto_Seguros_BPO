@@ -32,7 +32,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
 import cl.duocuc.segurosbpo.model.Liquidador
@@ -44,6 +43,7 @@ import cl.duocuc.segurosbpo.ui.components.FiltroEtapas
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import kotlinx.coroutines.launch
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,8 +77,8 @@ fun CasosLiquidadorScreen(
         Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(Dimens.espacioMedio),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
         ) {
             Text("Equipo de " + liquidador.equipo, style = MaterialTheme.typography.titleLarge)
             Text("Responsable: " + responsable, style = MaterialTheme.typography.bodySmall)
@@ -132,8 +132,8 @@ fun CasosLiquidadorScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        Modifier.padding(Dimens.espacioTarjeta),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.espacioMini)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),

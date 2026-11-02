@@ -11,10 +11,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.ui.style.estiloAltoBoton
 import cl.duocuc.segurosbpo.ui.style.EstilosBotones
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 
 @Composable
@@ -40,7 +40,7 @@ fun BotonSecundario(
 internal fun BotonSecundarioPreview() {
     SegurosBpoTheme {
         var limpiezas by remember { mutableStateOf(0) }
-        Column(Modifier.padding(16.dp)) {
+        Column(Modifier.padding(Dimens.espacioMedio)) {
             BotonSecundario(texto = "Limpiar", onClick = { limpiezas += 1 })
             Text("Limpiezas: " + limpiezas)
         }

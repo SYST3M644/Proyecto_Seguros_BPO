@@ -8,7 +8,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
@@ -36,6 +35,6 @@ fun EtiquetaInteres(
 @Composable
 internal fun EtiquetaInteresPreview() {
     SegurosBpoTheme {
-        EtiquetaInteres(texto = "Kotlin", modifier = Modifier.padding(16.dp))
+        EtiquetaInteres(texto = "Kotlin", modifier = Modifier.padding(Dimens.espacioMedio))
     }
 }

@@ -28,7 +28,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.CuentaLocal
 import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.ValidadorContacto
@@ -36,6 +35,7 @@ import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.AvatarCuenta
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import kotlinx.coroutines.launch
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,13 +64,13 @@ fun LiquidadoresScreen(
     Scaffold(topBar = { BarraSuperior("Equipo de liquidadores") }) { margen ->
         Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
             Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Dimens.espacioMedio),
+                verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
             ) {
                 Card(Modifier.fillMaxWidth()) {
                     Column(
-                        Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        Modifier.padding(Dimens.espacioMedio),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.espacioJusto)
                     ) {
                         Text(
                             "Agregar un liquidador",
@@ -105,7 +105,7 @@ fun LiquidadoresScreen(
                             }
                         )
                         Text("Área", style = MaterialTheme.typography.bodySmall)
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico)) {
                             Liquidador.entries.forEach { area ->
                                 FilterChip(
                                     selected = equipo == area.name,
@@ -136,8 +136,8 @@ fun LiquidadoresScreen(
                     val delArea = liquidadores.filter { it.equipo == area.name }
                     Card(Modifier.fillMaxWidth()) {
                         Column(
-                            Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                            Modifier.padding(Dimens.espacioMedio),
+                            verticalArrangement = Arrangement.spacedBy(Dimens.espacioJusto)
                         ) {
                             Text(
                                 "Equipo " + area.equipo + " (" + delArea.size + ")",
@@ -154,12 +154,12 @@ fun LiquidadoresScreen(
                                 if (indice > 0) HorizontalDivider()
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(Dimens.espacioJusto)
                                 ) {
                                     AvatarCuenta(
                                         foto = cuenta.foto,
                                         descripcion = cuenta.nombre,
-                                        tamano = 44.dp
+                                        tamano = Dimens.tamanoAvatarLista
                                     )
                                     Column(Modifier.weight(1f)) {
                                         Text(

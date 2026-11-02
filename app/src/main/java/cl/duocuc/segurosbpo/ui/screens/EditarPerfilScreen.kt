@@ -25,11 +25,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.CuentaLocal
 import cl.duocuc.segurosbpo.model.ValidadorContacto
 import cl.duocuc.segurosbpo.model.ValidadorRut
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,8 +54,8 @@ fun EditarPerfilScreen(
     Scaffold(topBar = { BarraSuperior("Editar perfil", onVolver = onVolver) }) { margen ->
         Column(
             Modifier.fillMaxSize().padding(margen).imePadding().verticalScroll(rememberScrollState())
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+                .padding(Dimens.espacioPantalla),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioTarjeta)
         ) {
             Text("Datos de contacto", style = MaterialTheme.typography.titleMedium)
 
@@ -119,7 +119,7 @@ fun EditarPerfilScreen(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(Dimens.espacioJusto)
             ) {
                 OutlinedButton(
                     modifier = Modifier.weight(1f),

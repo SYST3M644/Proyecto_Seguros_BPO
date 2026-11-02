@@ -27,7 +27,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.Consulta
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
 import cl.duocuc.segurosbpo.model.Siniestro
@@ -36,6 +35,7 @@ import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import kotlinx.coroutines.launch
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,8 +61,8 @@ fun ConsultasScreen(
         Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(Dimens.espacioMedio),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
         ) {
             if (siniestro == null) {
                 Text("Este siniestro no pertenece al asegurado seleccionado")
@@ -73,15 +73,15 @@ fun ConsultasScreen(
 
             if (siniestro.etapa == EtapaSiniestro.CERRADO) {
                 Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp)) {
+                    Column(Modifier.padding(Dimens.espacioMedio)) {
                         Text("El caso está cerrado y ya no admite nuevas consultas.")
                     }
                 }
             } else {
                 Card(Modifier.fillMaxWidth()) {
                     Column(
-                        Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        Modifier.padding(Dimens.espacioMedio),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.espacioJusto)
                     ) {
                         Text("Nueva consulta", style = MaterialTheme.typography.titleMedium)
                         OutlinedTextField(
@@ -127,8 +127,8 @@ fun ConsultasScreen(
             consultas.forEach { consulta ->
                 Card(Modifier.fillMaxWidth()) {
                     Column(
-                        Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                        Modifier.padding(Dimens.espacioMedio),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.espacioCorto)
                     ) {
                         Text(consulta.pregunta, style = MaterialTheme.typography.bodyLarge)
                         Text(

@@ -22,10 +22,10 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cl.duocuc.segurosbpo.model.ResumenCasos
 import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @Composable
 fun ResumenGraficosCasos(
@@ -38,8 +38,8 @@ fun ResumenGraficosCasos(
     val resumen = remember(casos) { ResumenCasos.desde(casos) }
     Card(modifier = modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier.padding(Dimens.espacioMedio),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)
         ) {
             Text(titulo, style = MaterialTheme.typography.titleMedium)
             Text(
@@ -59,7 +59,7 @@ fun ResumenGraficosCasos(
                 GraficoEvolucionCasos(casos)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
                 ) {
                     TarjetaEstadistica(resumen.total.toString(), "Total", Modifier.weight(1f))
                     TarjetaEstadistica(resumen.abiertos.toString(), "Abiertos", Modifier.weight(1f))
@@ -86,23 +86,23 @@ private fun GraficoEtapas(resumen: ResumenCasos) {
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
     ) {
         valores.forEachIndexed { indice, valor ->
             Column(
                 modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(Dimens.espacioMini)
             ) {
                 Text(valor.toString(), style = MaterialTheme.typography.labelLarge)
-                Canvas(modifier = Modifier.fillMaxWidth().height(100.dp)) {
+                Canvas(modifier = Modifier.fillMaxWidth().height(Dimens.altoGrafico)) {
                     val alto = size.height * valor.toFloat() / maximo * progreso.value
                     val ancho = size.width * 0.68f
                     drawRoundRect(
                         color = colorBarra,
                         topLeft = Offset((size.width - ancho) / 2f, size.height - alto),
                         size = Size(ancho, alto),
-                        cornerRadius = CornerRadius(5.dp.toPx())
+                        cornerRadius = CornerRadius(Dimens.espacioApretado.toPx())
                     )
                 }
                 Text(
@@ -126,13 +126,13 @@ internal fun GraficoSituacion(resumen: ResumenCasos) {
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(Dimens.espacioMedio),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Canvas(modifier = Modifier.size(120.dp)) {
+        Canvas(modifier = Modifier.size(Dimens.tamanoGraficoTorta)) {
             val barrido = 360f * progreso.value
             val barridoAbiertos = barrido * abiertos / resumen.total
-            val grosor = 24.dp.toPx()
+            val grosor = Dimens.espacioGrande.toPx()
             val esquina = Offset(grosor / 2f, grosor / 2f)
             val area = Size(size.width - grosor, size.height - grosor)
             drawArc(
@@ -154,7 +154,7 @@ internal fun GraficoSituacion(resumen: ResumenCasos) {
                 style = Stroke(width = grosor)
             )
         }
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)) {
             Text("Abiertos: " + abiertos, color = colorAbierto)
             Text("Cerrados: " + cerrados, color = MaterialTheme.colorScheme.onSurface)
             Text("Total: " + resumen.total, style = MaterialTheme.typography.labelLarge)

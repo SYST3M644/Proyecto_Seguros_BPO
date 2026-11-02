@@ -15,12 +15,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
 import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.ResumenGraficosCasos
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,16 +37,16 @@ fun EstadisticasLiquidadorScreen(
     Scaffold(topBar = { BarraSuperior("Estadísticas") }) { margen ->
         Column(
             Modifier.fillMaxSize().padding(margen).imePadding().verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(Dimens.espacioMedio),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
         ) {
             Text("Equipo de " + liquidador.equipo, style = MaterialTheme.typography.titleLarge)
             Text("Responsable: " + responsable)
 
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(
-                    Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    Modifier.padding(Dimens.espacioMedio),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
                 ) {
                     Indicador("Casos asignados", casos.size)
                     Indicador("En gestión", activos)

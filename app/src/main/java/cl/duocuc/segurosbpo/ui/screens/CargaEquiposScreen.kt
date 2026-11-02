@@ -17,10 +17,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,16 +38,16 @@ fun CargaEquiposScreen(
     Scaffold(topBar = { BarraSuperior("Carga de los equipos") }) { margen ->
         Column(
             Modifier.fillMaxSize().padding(margen).verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(Dimens.espacioMedio),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
         ) {
             Text("Resumen de asignaciones", style = MaterialTheme.typography.titleLarge)
             Text("Datos al " + actualizadoEn, style = MaterialTheme.typography.bodySmall)
 
             Card(Modifier.fillMaxWidth()) {
                 Column(
-                    Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    Modifier.padding(Dimens.espacioMedio),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
                 ) {
                     Linea("Casos activos con equipo", total.toString())
                     Linea("Casos esperando asignación", pendientes.size.toString())
@@ -59,8 +59,8 @@ fun CargaEquiposScreen(
                 val enEspera = pendientes.count { it.tipo.esVehiculo == equipo.esVehiculo }
                 Card(Modifier.fillMaxWidth()) {
                     Column(
-                        Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        Modifier.padding(Dimens.espacioMedio),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
                     ) {
                         Text(
                             "Equipo " + equipo.equipo,

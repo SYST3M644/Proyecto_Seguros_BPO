@@ -20,7 +20,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.style.EstiloCampo
 import cl.duocuc.segurosbpo.ui.theme.Dimens
@@ -86,7 +85,7 @@ internal fun CampoTextoPreview() {
             etiqueta = "Correo electrónico",
             icono = R.drawable.ic_correo,
             error = if ("@" in correo && correo.endsWith(".cl")) null else "Ingresa un correo válido",
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(Dimens.espacioMedio)
         )
     }
 }

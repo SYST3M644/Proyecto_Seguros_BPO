@@ -20,9 +20,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
 import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,8 +35,8 @@ fun EditarSiniestroScreen(
     val error = descripcion.isBlank()
     Scaffold(topBar = { BarraSuperior("Corregir reporte") }) { margen ->
         Column(
-            Modifier.fillMaxSize().padding(margen).imePadding().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            Modifier.fillMaxSize().padding(margen).imePadding().padding(Dimens.espacioMedio),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
         ) {
             if (siniestro == null || siniestro.etapa != EtapaSiniestro.RECIBIDO) {
                 Text("Este reporte no se puede editar")

@@ -19,7 +19,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.ui.components.AvatarCuenta
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.R
@@ -27,6 +26,7 @@ import cl.duocuc.segurosbpo.model.ValidadorRut
 import cl.duocuc.segurosbpo.model.CuentaLocal
 import cl.duocuc.segurosbpo.model.RolCuenta
 import cl.duocuc.segurosbpo.model.etiquetaEquipo
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,8 +41,8 @@ fun SeleccionUsuarioScreen(
     Scaffold(topBar = { BarraSuperior(stringResource(R.string.titulo_seleccion_usuario)) }) { margen ->
         Column(
             modifier = Modifier.fillMaxSize().padding(margen).imePadding()
-                .verticalScroll(rememberScrollState()).padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .verticalScroll(rememberScrollState()).padding(Dimens.espacioPantalla),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
         ) {
             Text(
                 stringResource(R.string.titulo_elige_quien_eres),
@@ -121,12 +121,12 @@ private fun TarjetaUsuario(
 ) {
     Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth().padding(Dimens.espacioMedio),
+            horizontalArrangement = Arrangement.spacedBy(Dimens.espacioRegular),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AvatarCuenta(foto = foto, descripcion = nombre, tamano = 44.dp)
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            AvatarCuenta(foto = foto, descripcion = nombre, tamano = Dimens.tamanoAvatarLista)
+            Column(verticalArrangement = Arrangement.spacedBy(Dimens.espacioMini)) {
                 Text(nombre, style = MaterialTheme.typography.titleMedium)
                 Text(detalle, style = MaterialTheme.typography.bodySmall)
             }

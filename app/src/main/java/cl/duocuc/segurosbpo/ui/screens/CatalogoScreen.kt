@@ -30,12 +30,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.Compania
 import cl.duocuc.segurosbpo.model.TipoSiniestro
 import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import kotlinx.coroutines.launch
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,13 +58,13 @@ fun CatalogoScreen(
     Scaffold(topBar = { BarraSuperior("Catálogos del sistema") }) { margen ->
         Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
             Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Dimens.espacioMedio),
+                verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
             ) {
                 Card(Modifier.fillMaxWidth()) {
                     Column(
-                        Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        Modifier.padding(Dimens.espacioMedio),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.espacioJusto)
                     ) {
                         Text(
                             "Agregar compañía de seguros",
@@ -108,8 +108,8 @@ fun CatalogoScreen(
 
                 Card(Modifier.fillMaxWidth()) {
                     Column(
-                        Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        Modifier.padding(Dimens.espacioMedio),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
                     ) {
                         Text(
                             "Compañías registradas (" + companias.size + ")",
@@ -145,8 +145,8 @@ fun CatalogoScreen(
 
                 Card(Modifier.fillMaxWidth()) {
                     Column(
-                        Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        Modifier.padding(Dimens.espacioMedio),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.espacioJusto)
                     ) {
                         Text(
                             "Agregar tipo de siniestro",
@@ -161,7 +161,7 @@ fun CatalogoScreen(
                             singleLine = true
                         )
                         Text("Área responsable", style = MaterialTheme.typography.bodySmall)
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico)) {
                             FilterChip(
                                 selected = esVehiculo,
                                 onClick = { esVehiculo = true },
@@ -204,8 +204,8 @@ fun CatalogoScreen(
 
                 Card(Modifier.fillMaxWidth()) {
                     Column(
-                        Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        Modifier.padding(Dimens.espacioMedio),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
                     ) {
                         Text(
                             "Tipos registrados (" + tipos.size + ")",

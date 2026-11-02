@@ -15,7 +15,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
@@ -34,7 +33,7 @@ fun AvatarCircular(
         contentScale = ContentScale.Crop,
         modifier = modifier
             .size(tamano)
-            .shadow(elevation = 6.dp, shape = CircleShape)
+            .shadow(elevation = Dimens.elevacionAvatar, shape = CircleShape)
             .clip(CircleShape)
             .border(Dimens.bordeAvatar, MaterialTheme.colorScheme.surface, CircleShape)
     )
@@ -44,6 +43,6 @@ fun AvatarCircular(
 @Composable
 internal fun AvatarCircularPreview() {
     SegurosBpoTheme {
-        AvatarCircular(imagen = R.drawable.avatar_usuario, descripcion = "", modifier = Modifier.padding(16.dp))
+        AvatarCircular(imagen = R.drawable.avatar_usuario, descripcion = "", modifier = Modifier.padding(Dimens.espacioMedio))
     }
 }

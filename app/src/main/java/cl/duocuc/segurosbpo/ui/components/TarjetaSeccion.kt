@@ -13,7 +13,6 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.ui.style.EstiloTarjeta
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
@@ -51,7 +50,7 @@ fun TarjetaSeccion(
 @Composable
 internal fun TarjetaSeccionPreview() {
     SegurosBpoTheme {
-        TarjetaSeccion(titulo = "Sobre mí", modifier = Modifier.padding(16.dp)) {
+        TarjetaSeccion(titulo = "Sobre mí", modifier = Modifier.padding(Dimens.espacioMedio)) {
             Text("Cualquier contenido puede ir aquí dentro.")
         }
     }

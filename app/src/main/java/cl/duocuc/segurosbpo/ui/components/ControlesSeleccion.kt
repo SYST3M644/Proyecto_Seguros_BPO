@@ -22,7 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
@@ -114,7 +113,7 @@ internal fun ControlesSeleccionPreview() {
         var aceptado by remember { mutableStateOf(true) }
         var recibir by remember { mutableStateOf(false) }
         var seleccion by remember { mutableStateOf("Uno") }
-        Column(Modifier.padding(16.dp)) {
+        Column(Modifier.padding(Dimens.espacioMedio)) {
             CasillaConTexto(texto = "Acepto los términos", marcado = aceptado, onCambio = { aceptado = it })
             InterruptorConTexto(texto = "Recibir novedades", activado = recibir, onCambio = { recibir = it })
             GrupoRadio(

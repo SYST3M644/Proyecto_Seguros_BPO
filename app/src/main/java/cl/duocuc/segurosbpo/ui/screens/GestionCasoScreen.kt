@@ -33,7 +33,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.Consulta
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
 import cl.duocuc.segurosbpo.model.Gestion
@@ -45,6 +44,7 @@ import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import kotlinx.coroutines.launch
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,8 +88,8 @@ fun GestionCasoScreen(
         Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(Dimens.espacioMedio),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
         ) {
             if (caso == null) {
                 Text("El caso no está disponible.")
@@ -161,7 +161,7 @@ fun GestionCasoScreen(
                     if (solicitudes.isNotEmpty()) {
                         HorizontalDivider()
                         solicitudes.forEach { solicitud ->
-                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Column(verticalArrangement = Arrangement.spacedBy(Dimens.espacioMinimo)) {
                                 Text(solicitud.tipo, style = MaterialTheme.typography.titleSmall)
                                 Text(
                                     (if (solicitud.pendiente) "Pendiente"
@@ -170,7 +170,7 @@ fun GestionCasoScreen(
                                     style = MaterialTheme.typography.bodySmall
                                 )
                                 if (solicitud.pendiente) {
-                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(Dimens.espacioMini)) {
                                         TextButton(onClick = {
                                             val error = onMarcarRecibida(solicitud.id)
                                             mostrar(error ?: "Documento dado por recibido")
@@ -203,7 +203,7 @@ fun GestionCasoScreen(
                     }
                     consultas.forEach { consulta ->
                         HorizontalDivider()
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(Dimens.espacioCorto)) {
                             Text(consulta.pregunta, style = MaterialTheme.typography.bodyMedium)
                             Text(
                                 consulta.fechaPregunta,
@@ -256,7 +256,7 @@ fun GestionCasoScreen(
                     )
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(Dimens.espacioMini)
                     ) {
                         Checkbox(checked = visible, onCheckedChange = { visible = it })
                         Text(
@@ -264,7 +264,7 @@ fun GestionCasoScreen(
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico)) {
                         TextButton(onClick = {
                             descripcion = "Sin novedades"
                             visible = true
@@ -285,7 +285,7 @@ fun GestionCasoScreen(
                 if (siguiente != null) {
                     Seccion("5. Avanzar a " + siguiente.paso) {
                         if (siguiente == EtapaSiniestro.CERRADO) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico)) {
                                 listOf("Aprobado", "Rechazado").forEach { opcion ->
                                     FilterChip(
                                         selected = resultado == opcion,
@@ -336,7 +336,7 @@ fun GestionCasoScreen(
                         )
                         val opciones = if (caso.etapa == EtapaSiniestro.RECIBIDO)
                             listOf("Desistido") else listOf("Rechazado", "Desistido")
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico)) {
                             opciones.forEach { opcion ->
                                 FilterChip(
                                     selected = resultado == opcion,
@@ -392,8 +392,8 @@ fun GestionCasoScreen(
 private fun Seccion(titulo: String, contenido: @Composable () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
-            Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            Modifier.padding(Dimens.espacioMedio),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioJusto)
         ) {
             Text(titulo, style = MaterialTheme.typography.titleMedium)
             contenido()

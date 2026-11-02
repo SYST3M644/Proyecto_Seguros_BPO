@@ -21,10 +21,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.model.AvisoSiniestro
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,16 +39,16 @@ fun AvisosScreen(
     LaunchedEffect(Unit) { onCargar() }
     Scaffold(topBar = { BarraSuperior(stringResource(R.string.titulo_avisos)) }) { margen ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(margen).imePadding().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.fillMaxSize().padding(margen).imePadding().padding(Dimens.espacioMedio),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
         ) {
             if (avisos.isEmpty()) Text(stringResource(R.string.vacio_sin_avisos))
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)) {
                 items(avisos, key = { it.id }) { aviso ->
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                            modifier = Modifier.padding(Dimens.espacioMedio),
+                            verticalArrangement = Arrangement.spacedBy(Dimens.espacioCorto)
                         ) {
                             CodigoSiniestro(aviso.numeroSiniestro)
                             Text(aviso.mensaje)
@@ -74,7 +74,7 @@ fun AvisosScreen(
                                 ) { Text(stringResource(R.string.btn_enviar_documento, aviso.documentoPedido)) }
                             }
 
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.espacioMini)) {
                                 TextButton(onClick = {
                                     onMarcarLeido(aviso.id)
                                     onAbrirCaso(aviso.siniestroId)

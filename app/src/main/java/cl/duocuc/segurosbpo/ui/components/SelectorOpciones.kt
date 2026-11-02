@@ -18,7 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @Composable
 fun <T> SelectorOpciones(
@@ -31,7 +31,7 @@ fun <T> SelectorOpciones(
 ) {
     var mostrar by remember { mutableStateOf(false) }
 
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Dimens.espacioMini)) {
         Text(
             text = titulo,
             style = MaterialTheme.typography.bodyMedium,
@@ -56,7 +56,7 @@ fun <T> SelectorOpciones(
             onDismissRequest = { mostrar = false },
             title = { Text(titulo) },
             text = {
-                LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
+                LazyColumn(modifier = Modifier.heightIn(max = Dimens.altoListaOpciones)) {
                     items(opciones) { opcion ->
                         TextButton(
                             onClick = {

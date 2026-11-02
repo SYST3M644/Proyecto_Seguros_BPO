@@ -21,7 +21,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.style.EstiloCampo
 import cl.duocuc.segurosbpo.ui.theme.Dimens
@@ -79,7 +78,7 @@ internal fun CampoContrasenaPreview() {
     SegurosBpoTheme {
         var clave by remember { mutableStateOf("secreto") }
         var visible by remember { mutableStateOf(false) }
-        Column(Modifier.padding(16.dp)) {
+        Column(Modifier.padding(Dimens.espacioMedio)) {
             CampoContrasena(
                 valor = clave,
                 onValorCambia = { clave = it },

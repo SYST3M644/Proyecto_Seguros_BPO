@@ -30,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.data.ProcesadorEvidencia
 import cl.duocuc.segurosbpo.model.CuentaLocal
 import cl.duocuc.segurosbpo.model.RolCuenta
@@ -39,6 +38,7 @@ import cl.duocuc.segurosbpo.permisos.Permisos
 import cl.duocuc.segurosbpo.ui.components.AvatarCuenta
 import cl.duocuc.segurosbpo.ui.components.AvatarImagen
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -110,8 +110,8 @@ fun PerfilCuentaScreen(
     ) { margen ->
         Column(
             Modifier.fillMaxSize().padding(margen).imePadding().verticalScroll(rememberScrollState())
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+                .padding(Dimens.espacioPantalla),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioTarjeta),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             val pendiente = fotoPendiente
@@ -119,13 +119,13 @@ fun PerfilCuentaScreen(
                 AvatarCuenta(
                     foto = cuenta.foto,
                     descripcion = "Foto de perfil",
-                    tamano = 120.dp
+                    tamano = Dimens.tamanoAvatar
                 )
             } else {
                 AvatarImagen(
                     imagen = pendiente.asImageBitmap(),
                     descripcion = "Foto de perfil sin guardar",
-                    tamano = 120.dp
+                    tamano = Dimens.tamanoAvatar
                 )
             }
 
@@ -142,8 +142,8 @@ fun PerfilCuentaScreen(
 
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.padding(Dimens.espacioMedio),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
                 ) {
                     if (cuenta.rut.isNotBlank()) {
                         DatoPerfil("RUT", cuenta.rut)
@@ -159,7 +159,7 @@ fun PerfilCuentaScreen(
             Text("Foto de perfil", style = MaterialTheme.typography.titleMedium)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(Dimens.espacioJusto)
             ) {
                 Button(
                     modifier = Modifier.weight(1f),
@@ -182,7 +182,7 @@ fun PerfilCuentaScreen(
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.espacioJusto)
                 ) {
                     OutlinedButton(
                         modifier = Modifier.weight(1f),

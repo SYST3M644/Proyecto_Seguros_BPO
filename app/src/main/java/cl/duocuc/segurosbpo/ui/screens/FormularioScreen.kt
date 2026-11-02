@@ -26,7 +26,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material3.AlertDialog
 import android.app.DatePickerDialog
@@ -625,14 +624,14 @@ private fun AdjuntosDelReporte(
                         bitmap = imagen.asImageBitmap(),
                         contentDescription = adjunto.nombre,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.size(56.dp)
-                            .clip(RoundedCornerShape(8.dp))
+                        modifier = Modifier.size(Dimens.tamanoAdjunto)
+                            .clip(RoundedCornerShape(Dimens.espacioChico))
                             .clickable { ampliada = imagen }
                     )
                 } else if (adjunto.esImagen) {
                     Box(
-                        Modifier.size(56.dp)
-                            .clip(RoundedCornerShape(8.dp))
+                        Modifier.size(Dimens.tamanoAdjunto)
+                            .clip(RoundedCornerShape(Dimens.espacioChico))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                     )
                 }

@@ -39,7 +39,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
 import cl.duocuc.segurosbpo.model.DocumentosLiquidador
 import cl.duocuc.segurosbpo.model.Evidencia
@@ -49,6 +48,7 @@ import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import kotlinx.coroutines.launch
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -163,8 +163,8 @@ fun DocumentosLiquidadorScreen(
         Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(Dimens.espacioMedio),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
         ) {
             if (siniestro == null) {
                 Text("El caso no está disponible.")
@@ -191,7 +191,7 @@ fun DocumentosLiquidadorScreen(
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.espacioJusto)
                 ) {
                     Button(
                         modifier = Modifier.weight(1f),
@@ -214,7 +214,7 @@ fun DocumentosLiquidadorScreen(
             if (evidencias.isEmpty()) Text("Todavía no hay documentos en este caso.")
             evidencias.forEach { evidencia ->
                 Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(14.dp)) {
+                    Column(Modifier.padding(Dimens.espacioTarjeta)) {
                         FilaDocumento(
                             tipo = evidencia.tipoDocumento,
                             nombre = evidencia.nombreArchivo,

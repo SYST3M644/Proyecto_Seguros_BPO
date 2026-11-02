@@ -14,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.ui.style.EstiloTarjeta
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
@@ -56,7 +55,7 @@ fun TarjetaEstadistica(
 @Composable
 internal fun TarjetaEstadisticaPreview() {
     SegurosBpoTheme {
-        Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.padding(Dimens.espacioMedio), horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico)) {
             TarjetaEstadistica("128", "Seguidores", Modifier.weight(1f))
             TarjetaEstadistica("96", "Siguiendo", Modifier.weight(1f))
         }

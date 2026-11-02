@@ -18,9 +18,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.Gestion
 import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,8 +33,8 @@ fun HistorialSiniestroScreen(
     LaunchedEffect(siniestro?.id) { if (siniestro != null) onCargar() }
     Scaffold(topBar = { BarraSuperior("Historial del siniestro") }) { margen ->
         Column(
-            Modifier.fillMaxSize().padding(margen).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            Modifier.fillMaxSize().padding(margen).padding(Dimens.espacioMedio),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
         ) {
             if (siniestro == null) {
                 Text("No se encontró un siniestro de este asegurado")
@@ -42,12 +42,12 @@ fun HistorialSiniestroScreen(
                 CodigoSiniestro(siniestro.numero, estilo = MaterialTheme.typography.titleLarge)
                 Text("Gestiones visibles para el asegurado")
                 if (gestiones.isEmpty()) Text("Todavía no existen movimientos registrados.")
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.espacioJusto)) {
                     items(gestiones, key = { it.id }) { gestion ->
                         Card(Modifier.fillMaxWidth()) {
                             Column(
-                                Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(5.dp)
+                                Modifier.padding(Dimens.espacioMedio),
+                                verticalArrangement = Arrangement.spacedBy(Dimens.espacioApretado)
                             ) {
                                 Text(gestion.fecha, style = MaterialTheme.typography.labelMedium)
                                 Text(gestion.descripcion, style = MaterialTheme.typography.bodyLarge)

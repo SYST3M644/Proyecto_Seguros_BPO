@@ -22,9 +22,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.R
 import kotlinx.coroutines.delay
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @Composable
 fun CodigoSiniestro(
@@ -48,13 +48,13 @@ fun CodigoSiniestro(
             copiado = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
         },
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+        horizontalArrangement = Arrangement.spacedBy(Dimens.espacioCorto)
     ) {
         Text(numero, style = estilo)
         Icon(
             painter = painterResource(R.drawable.ic_copiar),
             contentDescription = "Copiar el número " + numero,
-            modifier = Modifier.size(16.dp),
+            modifier = Modifier.size(Dimens.tamanoIconoChico),
             tint = MaterialTheme.colorScheme.primary
         )
         if (copiado) {

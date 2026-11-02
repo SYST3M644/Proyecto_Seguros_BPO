@@ -54,7 +54,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.permisos.Permisos
 import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
@@ -62,6 +61,7 @@ import cl.duocuc.segurosbpo.model.Evidencia
 import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.model.SolicitudDocumento
 import kotlinx.coroutines.launch
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 private data class AdjuntoPendiente(
     val clave: Long,
@@ -311,8 +311,8 @@ fun EvidenciasScreen(
         Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
             Column(
                 modifier = Modifier.fillMaxSize()
-                    .verticalScroll(rememberScrollState()).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .verticalScroll(rememberScrollState()).padding(Dimens.espacioMedio),
+                verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
             ) {
                 if (siniestro == null) {
                     Text("Este siniestro no pertenece al asegurado seleccionado")
@@ -327,8 +327,8 @@ fun EvidenciasScreen(
                 if (enviados > 0) {
                     Card(Modifier.fillMaxWidth()) {
                         Column(
-                            Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            Modifier.padding(Dimens.espacioMedio),
+                            verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
                         ) {
                             Text(
                                 "Envío exitoso",
@@ -341,7 +341,7 @@ fun EvidenciasScreen(
                             )
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                horizontalArrangement = Arrangement.spacedBy(Dimens.espacioJusto)
                             ) {
                                 Button(
                                     modifier = Modifier.weight(1f),
@@ -445,7 +445,7 @@ fun EvidenciasScreen(
                         porEnviar.forEach { adjunto ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                horizontalArrangement = Arrangement.spacedBy(Dimens.espacioJusto),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 var vista by remember(adjunto.clave) {
@@ -464,14 +464,14 @@ fun EvidenciasScreen(
                                         bitmap = imagen.asImageBitmap(),
                                         contentDescription = adjunto.nombre,
                                         contentScale = ContentScale.Crop,
-                                        modifier = Modifier.size(56.dp)
-                                            .clip(RoundedCornerShape(8.dp))
+                                        modifier = Modifier.size(Dimens.tamanoAdjunto)
+                                            .clip(RoundedCornerShape(Dimens.espacioChico))
                                             .clickable { imagenVista = imagen }
                                     )
                                 } else if (adjunto.esImagen) {
                                     Box(
-                                        Modifier.size(56.dp)
-                                            .clip(RoundedCornerShape(8.dp))
+                                        Modifier.size(Dimens.tamanoAdjunto)
+                                            .clip(RoundedCornerShape(Dimens.espacioChico))
                                             .background(MaterialTheme.colorScheme.surfaceVariant)
                                     )
                                 }
@@ -499,7 +499,7 @@ fun EvidenciasScreen(
                         )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            horizontalArrangement = Arrangement.spacedBy(Dimens.espacioJusto)
                         ) {
                             OutlinedButton(
                                 modifier = Modifier.weight(1f),
@@ -569,15 +569,15 @@ internal fun FilaDocumento(
     }
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(Dimens.espacioJusto),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (esImagen) {
             val vista = miniatura
             if (vista == null) {
                 Box(
-                    Modifier.size(64.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                    Modifier.size(Dimens.tamanoMiniatura)
+                        .clip(RoundedCornerShape(Dimens.espacioChico))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
             } else {
@@ -585,8 +585,8 @@ internal fun FilaDocumento(
                     bitmap = vista.asImageBitmap(),
                     contentDescription = "Vista previa: " + tipo,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(64.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                    modifier = Modifier.size(Dimens.tamanoMiniatura)
+                        .clip(RoundedCornerShape(Dimens.espacioChico))
                         .clickable(onClick = onAbrir)
                 )
             }
@@ -620,8 +620,8 @@ internal fun FilaDocumento(
 private fun BloqueEvidencias(titulo: String, contenido: @Composable () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
-            Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            Modifier.padding(Dimens.espacioMedio),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
         ) {
             Text(titulo, style = MaterialTheme.typography.titleMedium)
             contenido()

@@ -26,7 +26,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.ControlPlazos
 import cl.duocuc.segurosbpo.model.CuentaLocal
 import cl.duocuc.segurosbpo.model.Liquidador
@@ -37,6 +36,7 @@ import cl.duocuc.segurosbpo.ui.components.BuscadorCasos
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import kotlinx.coroutines.launch
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,8 +61,8 @@ fun AsignacionCasosScreen(
         Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(Dimens.espacioMedio),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
         ) {
             Text(
                 "Casos sin liquidador: " + pendientes.size,
@@ -78,7 +78,7 @@ fun AsignacionCasosScreen(
 
             if (pendientes.isEmpty()) {
                 Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(20.dp)) {
+                    Column(Modifier.padding(Dimens.espacioPantalla)) {
                         Text("Todos los casos recibidos ya tienen equipo asignado.")
                     }
                 }
@@ -91,8 +91,8 @@ fun AsignacionCasosScreen(
                 val espera = ControlPlazos.diasHabilesTranscurridos(caso.fechaReporte)
                 Card(Modifier.fillMaxWidth()) {
                     Column(
-                        Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                        Modifier.padding(Dimens.espacioMedio),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.espacioCorto)
                     ) {
                         CodigoSiniestro(caso.numero)
                         Text(caso.tipo.etiqueta)
@@ -130,7 +130,7 @@ fun AsignacionCasosScreen(
                             candidatos.forEach { persona ->
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
                                 ) {
                                     Column(Modifier.weight(1f)) {
                                         Text(
