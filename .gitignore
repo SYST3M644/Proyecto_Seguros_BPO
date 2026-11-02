@@ -33,3 +33,5 @@ google-services.json
 *.bak
 .DS_Store
 Thumbs.db
+
+/gradle/gradle-daemon-jvm.properties
