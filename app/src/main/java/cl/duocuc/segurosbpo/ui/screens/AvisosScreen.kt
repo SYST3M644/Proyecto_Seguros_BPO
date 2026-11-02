@@ -22,6 +22,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.model.AvisoSiniestro
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,12 +37,12 @@ fun AvisosScreen(
     onVolver: () -> Unit
 ) {
     LaunchedEffect(Unit) { onCargar() }
-    Scaffold(topBar = { BarraSuperior("Avisos de mis siniestros") }) { margen ->
+    Scaffold(topBar = { BarraSuperior(stringResource(R.string.titulo_avisos)) }) { margen ->
         Column(
             modifier = Modifier.fillMaxSize().padding(margen).imePadding().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            if (avisos.isEmpty()) Text("No tienes avisos nuevos ni anteriores.")
+            if (avisos.isEmpty()) Text(stringResource(R.string.vacio_sin_avisos))
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(avisos, key = { it.id }) { aviso ->
                     Card(modifier = Modifier.fillMaxWidth()) {
@@ -51,7 +53,14 @@ fun AvisosScreen(
                             CodigoSiniestro(aviso.numeroSiniestro)
                             Text(aviso.mensaje)
                             Text(
-                                aviso.fecha + " · " + (if (aviso.leido) "Leído" else "No leído"),
+                                stringResource(
+                                    R.string.etiqueta_fecha_estado,
+                                    aviso.fecha,
+                                    stringResource(
+                                        if (aviso.leido) R.string.estado_leido
+                                        else R.string.estado_no_leido
+                                    )
+                                ),
                                 style = MaterialTheme.typography.bodySmall
                             )
 
@@ -62,17 +71,17 @@ fun AvisosScreen(
                                         onMarcarLeido(aviso.id)
                                         onAdjuntar(aviso.siniestroId)
                                     }
-                                ) { Text("Enviar " + aviso.documentoPedido) }
+                                ) { Text(stringResource(R.string.btn_enviar_documento, aviso.documentoPedido)) }
                             }
 
                             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                 TextButton(onClick = {
                                     onMarcarLeido(aviso.id)
                                     onAbrirCaso(aviso.siniestroId)
-                                }) { Text("Ver siniestro") }
+                                }) { Text(stringResource(R.string.btn_ver_siniestro)) }
                                 if (!aviso.leido) {
                                     TextButton(onClick = { onMarcarLeido(aviso.id) }) {
-                                        Text("Marcar como leído")
+                                        Text(stringResource(R.string.btn_marcar_leido))
                                     }
                                 }
                             }

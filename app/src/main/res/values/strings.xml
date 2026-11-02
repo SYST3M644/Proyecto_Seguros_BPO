@@ -34,4 +34,40 @@
     <string name="cd_mostrar_contraseña">Mostrar contraseña</string>
     <string name="cd_ocultar_contraseña">Ocultar Contraseña</string>
 
+
+    <string name="titulo_mis_siniestros">Mis siniestros</string>
+    <string name="titulo_seguimiento">Seguimiento de seguros</string>
+    <string name="cd_nuevo_reporte">Reportar un siniestro nuevo</string>
+    <string name="cd_foto_asegurado">Foto de la persona asegurada</string>
+    <string name="etiqueta_asegurado_actual">Asegurado: %1$s</string>
+    <string name="etiqueta_rut">RUT: %1$s</string>
+    <string name="etiqueta_datos_al">Datos al %1$s</string>
+    <string name="campo_buscar_siniestro">Buscar siniestro</string>
+    <string name="pista_buscar_siniestro">Número, compañía, tipo o comuna</string>
+    <string name="vacio_sin_siniestros">Todavía no tienes siniestros registrados</string>
+    <string name="vacio_sin_coincidencias">No hay siniestros con ese criterio</string>
+    <string name="ayuda_sin_siniestros">Puedes reportar uno para comenzar su seguimiento.</string>
+    <string name="ayuda_sin_coincidencias">Prueba con otro número, compañía o tipo.</string>
+    <string name="etiqueta_estado">Estado: %1$s</string>
+    <string name="aviso_fuera_de_plazo">Reporte fuera de plazo</string>
+    <string name="etiqueta_actualizado">Actualizado: %1$s</string>
+
+    <string name="titulo_seleccion_usuario">Seguros BPO</string>
+    <string name="titulo_elige_quien_eres">Elige quién eres</string>
+    <string name="ayuda_elige_cuenta">Selecciona tu cuenta para continuar.</string>
+    <string name="grupo_asegurados">Personas aseguradas</string>
+    <string name="grupo_liquidadores">Liquidadores</string>
+    <string name="grupo_administracion">Administración de siniestros</string>
+    <string name="etiqueta_equipo_de">Equipo de %1$s</string>
+    <string name="etiqueta_analista">Analista de asignaciones</string>
+    <string name="vacio_sin_usuarios">No hay usuarios disponibles.</string>
+
+    <string name="titulo_avisos">Avisos de mis siniestros</string>
+    <string name="vacio_sin_avisos">No tienes avisos nuevos ni anteriores.</string>
+    <string name="estado_leido">Leído</string>
+    <string name="estado_no_leido">No leído</string>
+    <string name="btn_enviar_documento">Enviar %1$s</string>
+    <string name="btn_ver_siniestro">Ver siniestro</string>
+    <string name="btn_marcar_leido">Marcar como leído</string>
+    <string name="etiqueta_fecha_estado">%1$s · %2$s</string>
 </resources>

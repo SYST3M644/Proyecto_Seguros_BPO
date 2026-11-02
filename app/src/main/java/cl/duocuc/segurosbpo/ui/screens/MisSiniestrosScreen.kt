@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.components.AvatarCuenta
@@ -48,12 +49,12 @@ fun MisSiniestrosScreen(
     onNuevoReporte: () -> Unit
 ) {
     Scaffold(
-        topBar = { BarraSuperior("Mis siniestros") },
+        topBar = { BarraSuperior(stringResource(R.string.titulo_mis_siniestros)) },
         floatingActionButton = {
             FloatingActionButton(onClick = onNuevoReporte) {
                 Icon(
                     painter = painterResource(R.drawable.ic_mas),
-                    contentDescription = "Reportar un siniestro nuevo"
+                    contentDescription = stringResource(R.string.cd_nuevo_reporte)
                 )
             }
         }
@@ -62,24 +63,27 @@ fun MisSiniestrosScreen(
             Modifier.fillMaxSize().padding(margen).imePadding().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Seguimiento de seguros", style = MaterialTheme.typography.titleLarge)
+            Text(
+                stringResource(R.string.titulo_seguimiento),
+                style = MaterialTheme.typography.titleLarge
+            )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 AvatarCuenta(
                     foto = fotoCuenta,
-                    descripcion = "Foto de la persona asegurada",
+                    descripcion = stringResource(R.string.cd_foto_asegurado),
                     tamano = 56.dp
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Asegurado: ${asegurado.etiqueta}")
+                    Text(stringResource(R.string.etiqueta_asegurado_actual, asegurado.etiqueta))
                     Text(
-                        "RUT: " + ValidadorRut.ocultar(asegurado.rut),
+                        stringResource(R.string.etiqueta_rut, ValidadorRut.ocultar(asegurado.rut)),
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        "Datos al " + actualizadoEn,
+                        stringResource(R.string.etiqueta_datos_al, actualizadoEn),
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -88,8 +92,8 @@ fun MisSiniestrosScreen(
                 value = busqueda,
                 onValueChange = onBuscar,
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Buscar siniestro") },
-                placeholder = { Text("Número, compañía, tipo o comuna") },
+                label = { Text(stringResource(R.string.campo_buscar_siniestro)) },
+                placeholder = { Text(stringResource(R.string.pista_buscar_siniestro)) },
                 singleLine = true
             )
             AnimatedVisibility(
@@ -99,8 +103,14 @@ fun MisSiniestrosScreen(
             ) {
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(20.dp)) {
-                        Text(if (busqueda.isBlank()) "Todavía no tienes siniestros registrados" else "No hay siniestros con ese criterio")
-                        Text(if (busqueda.isBlank()) "Puedes reportar uno para comenzar su seguimiento." else "Prueba con otro número, compañía o tipo.")
+                        Text(stringResource(
+                            if (busqueda.isBlank()) R.string.vacio_sin_siniestros
+                            else R.string.vacio_sin_coincidencias
+                        ))
+                        Text(stringResource(
+                            if (busqueda.isBlank()) R.string.ayuda_sin_siniestros
+                            else R.string.ayuda_sin_coincidencias
+                        ))
                     }
                 }
             }
@@ -112,17 +122,27 @@ fun MisSiniestrosScreen(
                                 CodigoSiniestro(siniestro.numero)
                                 Text(siniestro.compania.etiqueta)
                                 Text(siniestro.tipo.etiqueta)
-                                EtiquetaInteres(texto = "Estado: ${siniestro.etapa.etiqueta}")
+                                EtiquetaInteres(
+                                    texto = stringResource(
+                                        R.string.etiqueta_estado, siniestro.etapa.etiqueta
+                                    )
+                                )
                                 if (ValidadorSiniestro.reporteFueraDePlazo(
                                         siniestro.fechaOcurrencia, siniestro.fechaReporte
                                     )) {
                                     Text(
-                                        "Reporte fuera de plazo",
+                                        stringResource(R.string.aviso_fuera_de_plazo),
                                         color = MaterialTheme.colorScheme.error,
                                         style = MaterialTheme.typography.bodyMedium
                                     )
                                 }
-                                Text("Actualizado: ${siniestro.ultimaActualizacion}", style = MaterialTheme.typography.bodySmall)
+                                Text(
+                                    stringResource(
+                                        R.string.etiqueta_actualizado,
+                                        siniestro.ultimaActualizacion
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall
+                                )
                             }
                         }
                     }

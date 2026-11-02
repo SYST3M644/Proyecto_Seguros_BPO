@@ -18,9 +18,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.ui.components.AvatarCuenta
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
+import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.model.ValidadorRut
 import cl.duocuc.segurosbpo.model.CuentaLocal
 import cl.duocuc.segurosbpo.model.RolCuenta
@@ -36,24 +38,30 @@ fun SeleccionUsuarioScreen(
     val liquidadores = usuarios.filter { it.rol == RolCuenta.LIQUIDADOR }
     val analistas = usuarios.filter { it.rol == RolCuenta.ANALISTA }
 
-    Scaffold(topBar = { BarraSuperior("Seguros BPO") }) { margen ->
+    Scaffold(topBar = { BarraSuperior(stringResource(R.string.titulo_seleccion_usuario)) }) { margen ->
         Column(
             modifier = Modifier.fillMaxSize().padding(margen).imePadding()
                 .verticalScroll(rememberScrollState()).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Elige quién eres", style = MaterialTheme.typography.headlineSmall)
             Text(
-                "Selecciona tu cuenta para continuar.",
+                stringResource(R.string.titulo_elige_quien_eres),
+                style = MaterialTheme.typography.headlineSmall
+            )
+            Text(
+                stringResource(R.string.ayuda_elige_cuenta),
                 style = MaterialTheme.typography.bodySmall
             )
 
             if (asegurados.isNotEmpty()) {
-                Text("Personas aseguradas", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(R.string.grupo_asegurados),
+                    style = MaterialTheme.typography.titleMedium
+                )
                 asegurados.forEach { cuenta ->
                     TarjetaUsuario(
                         nombre = cuenta.nombre,
-                        detalle = "RUT: " + rutOculto(cuenta),
+                        detalle = stringResource(R.string.etiqueta_rut, rutOculto(cuenta)),
                         foto = cuenta.foto,
                         onClick = { onSeleccionar(cuenta.id) }
                     )
@@ -61,11 +69,16 @@ fun SeleccionUsuarioScreen(
             }
 
             if (liquidadores.isNotEmpty()) {
-                Text("Liquidadores", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(R.string.grupo_liquidadores),
+                    style = MaterialTheme.typography.titleMedium
+                )
                 liquidadores.forEach { cuenta ->
                     TarjetaUsuario(
                         nombre = cuenta.nombre,
-                        detalle = "Equipo de " + etiquetaEquipo(cuenta.equipo),
+                        detalle = stringResource(
+                            R.string.etiqueta_equipo_de, etiquetaEquipo(cuenta.equipo)
+                        ),
                         foto = cuenta.foto,
                         onClick = { onSeleccionar(cuenta.id) }
                     )
@@ -74,13 +87,13 @@ fun SeleccionUsuarioScreen(
 
             if (analistas.isNotEmpty()) {
                 Text(
-                    "Administración de siniestros",
+                    stringResource(R.string.grupo_administracion),
                     style = MaterialTheme.typography.titleMedium
                 )
                 analistas.forEach { cuenta ->
                     TarjetaUsuario(
                         nombre = cuenta.nombre,
-                        detalle = "Analista de asignaciones",
+                        detalle = stringResource(R.string.etiqueta_analista),
                         foto = cuenta.foto,
                         onClick = { onSeleccionar(cuenta.id) }
                     )
@@ -89,7 +102,7 @@ fun SeleccionUsuarioScreen(
 
             if (usuarios.isEmpty()) {
                 Text(
-                    "No hay usuarios disponibles.",
+                    stringResource(R.string.vacio_sin_usuarios),
                     color = MaterialTheme.colorScheme.error
                 )
             }
