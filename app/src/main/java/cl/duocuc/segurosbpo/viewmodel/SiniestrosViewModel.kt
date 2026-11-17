@@ -12,6 +12,7 @@ import cl.duocuc.segurosbpo.model.Liquidador
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.lifecycle.AndroidViewModel
+import cl.duocuc.segurosbpo.data.remote.ServidorSiniestros
 import cl.duocuc.segurosbpo.data.SiniestroDbHelper
 import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.Consulta
@@ -43,6 +44,8 @@ class SiniestrosViewModel @JvmOverloads constructor(
 
     private val _asegurado = MutableStateFlow(inicial)
     val asegurado = _asegurado.asStateFlow()
+    private val _estadoServidor = MutableStateFlow("")
+    val estadoServidor = _estadoServidor.asStateFlow()
     private val _siniestros = MutableStateFlow(db.listar(inicial))
     val siniestros = _siniestros.asStateFlow()
     private val _estadisticasAsegurado = MutableStateFlow(db.listar(inicial))
@@ -231,12 +234,27 @@ class SiniestrosViewModel @JvmOverloads constructor(
     var ultimoRegistrado: Long? = null
         private set
 
-    fun registrar(estado: FormularioUiState): String {
+    suspend fun registrar(estado: FormularioUiState): String {
         require(estado.asegurado == _asegurado.value) { "El asegurado seleccionado cambió" }
         val nuevo = db.registrar(estado)
         ultimoRegistrado = nuevo.id
         refrescar()
         refrescarAsignados()
+        val respuesta = runCatching { ServidorSiniestros.reportar(estado) }
+        val remoto = respuesta.getOrNull()
+        if (remoto != null) {
+            val guardado = runCatching {
+                db.actualizarNumeroServidor(nuevo.id, remoto.numero)
+            }.getOrDefault(false)
+            if (guardado) {
+                _estadoServidor.value = "Enviado al servidor: ${remoto.numero}"
+                refrescar()
+                return remoto.numero
+            }
+            _estadoServidor.value = "El servidor recibió ${remoto.numero}, pero no se pudo actualizar el número local"
+        } else {
+            _estadoServidor.value = "Caso guardado en este teléfono. Sin sincronización con el servidor."
+        }
         return nuevo.numero
     }
 

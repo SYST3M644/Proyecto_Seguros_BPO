@@ -54,6 +54,7 @@ import cl.duocuc.segurosbpo.ui.screens.HistorialSiniestroScreen
 import cl.duocuc.segurosbpo.ui.screens.EditarSiniestroScreen
 import cl.duocuc.segurosbpo.ui.screens.FormularioScreen
 import cl.duocuc.segurosbpo.ui.screens.MisSiniestrosScreen
+import cl.duocuc.segurosbpo.ui.screens.SiniestrosServidorScreen
 import cl.duocuc.segurosbpo.ui.screens.EditarPerfilScreen
 import cl.duocuc.segurosbpo.ui.screens.PerfilCuentaScreen
 import cl.duocuc.segurosbpo.model.RolCuenta
@@ -102,6 +103,12 @@ private fun BarraInferior(
                     icono = R.drawable.ic_reportar,
                     seleccionada = rutaActual == Ruta.Reportar.ruta,
                     onClick = { onNavegar(Ruta.Reportar.ruta) }
+                )
+                OpcionInferior(
+                    texto = "Servidor",
+                    icono = R.drawable.ic_seguir,
+                    seleccionada = rutaActual == Ruta.Servidor.ruta,
+                    onClick = { onNavegar(Ruta.Servidor.ruta) }
                 )
                 OpcionInferior(
                     texto = "Estadísticas",
@@ -265,6 +272,7 @@ fun AppNavegacion(
     val navController = rememberNavController()
     val siniestrosVm: SiniestrosViewModel = viewModel()
     val asegurado by siniestrosVm.asegurado.collectAsStateWithLifecycle()
+    val estadoServidor by siniestrosVm.estadoServidor.collectAsStateWithLifecycle()
     val siniestros by siniestrosVm.siniestros.collectAsStateWithLifecycle()
     val estadisticasAsegurado by siniestrosVm.estadisticasAsegurado.collectAsStateWithLifecycle()
     val busqueda by siniestrosVm.busqueda.collectAsStateWithLifecycle()
@@ -396,6 +404,13 @@ fun AppNavegacion(
                 }
 
                 if (sesion.rol == RolCuenta.ASEGURADO) {
+                    composable(Ruta.Servidor.ruta) {
+                        SiniestrosServidorScreen(
+                            asegurado = asegurado,
+                            estadoSincronizacion = estadoServidor,
+                            onVolver = { navController.navigateUp() }
+                        )
+                    }
                     composable(Ruta.MisSiniestros.ruta) {
                         MisSiniestrosScreen(
                             asegurado = asegurado,

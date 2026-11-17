@@ -91,7 +91,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun FormularioScreen(
     aseguradoActual: Asegurado,
-    onRegistroExitoso: (FormularioUiState) -> String,
+    onRegistroExitoso: suspend (FormularioUiState) -> String,
     onVolver: () -> Unit,
     onVerMisSiniestros: (Boolean) -> Unit,
     onGuardarFoto: suspend (String, Bitmap) -> String?,
@@ -113,7 +113,7 @@ fun FormularioScreen(
 @Composable
 fun FormularioScreen(
     aseguradoActual: Asegurado,
-    onRegistroExitoso: (FormularioUiState) -> String,
+    onRegistroExitoso: suspend (FormularioUiState) -> String,
     onVolver: () -> Unit,
     onVerMisSiniestros: (Boolean) -> Unit,
     onGuardarFoto: suspend (String, Bitmap) -> String?,
@@ -141,6 +141,37 @@ fun FormularioScreen(
             }
         }
     }
+    var registrando by remember { mutableStateOf(false) }
+    var errorEnvio by remember { mutableStateOf<String?>(null) }
+    fun registrarReporte() {
+        if (registrando || viewModel.uiState.value.reporteExitoso) return
+        registrando = true
+        val estado = viewModel.uiState.value
+        alcance.launch {
+            try {
+                runCatching { onRegistroExitoso(estado) }
+                    .onSuccess { numero ->
+                        viewModel.confirmarRegistro(numero)
+                        enviarAdjuntos()
+                        duplicado = null
+                    }.onFailure {
+                        errorEnvio = it.message ?: "No se pudo registrar el siniestro"
+                    }
+            } finally {
+                registrando = false
+            }
+        }
+    }
+    if (errorEnvio != null) {
+        AlertDialog(
+            onDismissRequest = { errorEnvio = null },
+            title = { Text("Error de registro") },
+            text = { Text(errorEnvio.orEmpty()) },
+            confirmButton = {
+                TextButton(onClick = { errorEnvio = null }) { Text("Aceptar") }
+            }
+        )
+    }
     if (duplicado != null) {
         AlertDialog(
             onDismissRequest = { duplicado = null },
@@ -149,10 +180,7 @@ fun FormularioScreen(
                 ". Si se trata de otro incidente, puedes continuar.") },
             confirmButton = {
                 TextButton(onClick = {
-                    val numero = onRegistroExitoso(viewModel.uiState.value)
-                    viewModel.confirmarRegistro(numero)
-                    enviarAdjuntos()
-                    duplicado = null
+                    registrarReporte()
                 }) { Text("Continuar de todos modos") }
             },
             dismissButton = {
@@ -180,9 +208,7 @@ fun FormularioScreen(
                 if (numeroExistente != null) {
                     duplicado = numeroExistente
                 } else {
-                    val numero = onRegistroExitoso(viewModel.uiState.value)
-                    viewModel.confirmarRegistro(numero)
-                    enviarAdjuntos()
+                    registrarReporte()
                 }
             }
         },

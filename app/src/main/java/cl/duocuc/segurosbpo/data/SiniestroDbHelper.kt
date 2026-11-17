@@ -604,6 +604,16 @@ class SiniestroDbHelper(
             arrayOf(id.toString(), liquidador.name), null, null, null
         ).use { c -> if (c.moveToFirst()) convertir(c) else null }
 
+    fun actualizarNumeroServidor(id: Long, numero: String): Boolean {
+        require(Regex("""SIN-\d{2}-\d{6}""").matches(numero)) { "Número remoto inválido" }
+        return writableDatabase.update(
+            "siniestros",
+            ContentValues().apply { put("numero", numero) },
+            "id = ?",
+            arrayOf(id.toString())
+        ) == 1
+    }
+
     fun listar(asegurado: Asegurado, busqueda: String = ""): List<Siniestro> {
         val resultado = mutableListOf<Siniestro>()
         val textoBuscado = busqueda.trim()
