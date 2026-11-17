@@ -1,0 +1,24 @@
+name: Backend Java CI
+on:
+  push:
+    paths:
+      - 'backend-java/**'
+      - '.github/workflows/backend-java-ci.yml'
+  pull_request:
+    paths:
+      - 'backend-java/**'
+      - '.github/workflows/backend-java-ci.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: backend-java/pom.xml
+      - name: Unit and integration tests
+        working-directory: backend-java
+        run: mvn -B -ntp clean verify

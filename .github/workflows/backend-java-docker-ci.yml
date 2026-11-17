@@ -1,0 +1,48 @@
+name: Backend Java Docker Compose CI
+
+on:
+  push:
+    paths:
+      - 'backend-java/**'
+      - '.github/workflows/backend-java-docker-ci.yml'
+  pull_request:
+    paths:
+      - 'backend-java/**'
+      - '.github/workflows/backend-java-docker-ci.yml'
+
+jobs:
+  docker-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Docker Compose
+        working-directory: backend-java
+        run: docker compose config --quiet
+      - name: Build images and start services
+        working-directory: backend-java
+        run: docker compose up --build -d --wait --wait-timeout 210
+      - name: Verify Gateway and Swagger over HTTP
+        working-directory: backend-java
+        run: bash scripts/docker-smoke.sh
+      - name: Verify report and access control through Gateway
+        working-directory: backend-java
+        run: bash scripts/docker-e2e.sh
+      - name: Verify H2 persistence across service recreation
+        working-directory: backend-java
+        run: |
+          set -euo pipefail
+          numero=$(cat /tmp/seguros-bpo-last-number)
+          docker compose up -d --force-recreate --no-deps --wait --wait-timeout 120 siniestros-service
+          curl -fsS --retry 15 --retry-delay 2 --retry-connrefused \
+            -H 'X-Role: ASEGURADO' -H 'X-Actor-Id: 15.842.371-5' \
+            "http://127.0.0.1:8080/api/v1/siniestros/$numero" \
+            | jq -e --arg num "$numero" '.numero==$num'
+      - name: Show container logs on failure
+        if: failure()
+        working-directory: backend-java
+        run: docker compose logs --tail=150
+      - name: Stop test environment
+        if: always()
+        working-directory: backend-java
+        run: docker compose down --remove-orphans
