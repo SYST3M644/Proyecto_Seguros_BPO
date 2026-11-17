@@ -1,0 +1,69 @@
+name: seguros-bpo-java
+
+x-build: &build
+  context: .
+  dockerfile: Dockerfile
+
+x-healthcheck: &health
+  interval: 10s
+  timeout: 5s
+  retries: 12
+  start_period: 40s
+
+services:
+  catalogos-service:
+    build:
+      <<: *build
+      args:
+        MODULE: catalogos-service
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    healthcheck:
+      <<: *health
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8081/api/v1/health || exit 1"]
+
+  siniestros-service:
+    build:
+      <<: *build
+      args:
+        MODULE: siniestros-service
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    environment:
+      CATALOGOS_BASE_URL: http://catalogos-service:8081
+      SPRING_DATASOURCE_URL: "jdbc:h2:file:/app/datos/siniestros;DB_CLOSE_ON_EXIT=FALSE"
+    volumes:
+      - siniestros-data:/app/datos
+    depends_on:
+      catalogos-service:
+        condition: service_healthy
+    healthcheck:
+      <<: *health
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8082/api/v1/health || exit 1"]
+
+  api-gateway:
+    build:
+      <<: *build
+      args:
+        MODULE: api-gateway
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    ports:
+      - "127.0.0.1:${GATEWAY_PORT:-8080}:8080"
+    environment:
+      SINIESTROS_BASE_URL: http://siniestros-service:8082
+      CATALOGOS_BASE_URL: http://catalogos-service:8081
+    depends_on:
+      siniestros-service:
+        condition: service_healthy
+      catalogos-service:
+        condition: service_healthy
+    healthcheck:
+      <<: *health
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/api/v1/health || exit 1"]
+
+volumes:
+  siniestros-data:

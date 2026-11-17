@@ -1,0 +1,12 @@
+**/target/
+**/.idea/
+**/.gradle/
+**/.DS_Store
+**/*.log
+**/datos/
+**/*.mv.db
+**/*.trace.db
+.git/
+README.md
+compose.yaml
+Dockerfile
