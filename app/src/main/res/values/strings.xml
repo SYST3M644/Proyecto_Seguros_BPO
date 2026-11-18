@@ -127,4 +127,24 @@
     <string name="btn_consultas_caso">Consultas del caso</string>
     <string name="btn_historial">Historial de gestiones</string>
     <string name="btn_corregir_descripcion">Corregir descripción</string>
+
+    <string name="titulo_login">Seguros BPO</string>
+    <string name="login_bienvenida">Inicia sesión</string>
+    <string name="login_ayuda">Usa el correo y la contraseña que te entregó la aseguradora.</string>
+    <string name="campo_correo">Correo electrónico</string>
+    <string name="campo_contrasena">Contraseña</string>
+    <string name="btn_ingresar">Ingresar</string>
+    <string name="cd_logo">Logo de Seguros BPO</string>
+    <string name="titulo_siniestros_api">Casos en el servidor</string>
+    <string name="ayuda_siniestros_api">Estos casos vienen del microservicio de siniestros.</string>
+    <string name="vacio_siniestros_api">No hay casos registrados en el servidor.</string>
+    <string name="btn_reintentar">Reintentar</string>
+    <string name="etiqueta_plazo_dias">Plazo: %1$d días hábiles</string>
+    <string name="titulo_reportar_api">Reportar al servidor</string>
+    <string name="ayuda_reportar_api">El siniestro se registra en el microservicio y queda disponible para el analista.</string>
+    <string name="btn_elegir_fecha">Elegir la fecha</string>
+    <string name="titulo_asignar_api">Asignar casos</string>
+    <string name="btn_asignar">Asignar</string>
+    <string name="vacio_sin_asignar_api">No hay casos esperando asignación.</string>
+    <string name="etiqueta_sin_liquidadores">No hay liquidadores disponibles.</string>
 </resources>

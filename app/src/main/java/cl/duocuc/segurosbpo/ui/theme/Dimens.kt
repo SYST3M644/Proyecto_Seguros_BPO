@@ -33,6 +33,8 @@ object Dimens {
 
     val altoBanner = 2.dp
     val altoPortada = 180.dp
+    val altoLogoLogin = 140.dp
+    val tamanoLogoBarra = 32.dp
     val altoGrafico = 100.dp
     val altoListaOpciones = 360.dp
     val radioBarraGrafico = 5.dp

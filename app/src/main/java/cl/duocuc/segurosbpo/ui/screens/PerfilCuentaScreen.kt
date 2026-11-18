@@ -47,7 +47,7 @@ import androidx.compose.ui.tooling.preview.Preview
 @Composable
 fun PerfilCuentaScreen(
     cuenta: CuentaLocal,
-    onGuardarFoto: (Bitmap) -> String?,
+    onGuardarFoto: (Bitmap, (String?) -> Unit) -> Unit,
     onEditar: () -> Unit,
     onVolver: () -> Unit,
     onCerrarSesion: () -> Unit
@@ -56,6 +56,7 @@ fun PerfilCuentaScreen(
     var mensaje by remember { mutableStateOf<String?>(null) }
     var permisoRechazado by remember { mutableStateOf(false) }
     var fotoPendiente by remember(cuenta.id) { mutableStateOf<Bitmap?>(null) }
+    var subiendo by remember(cuenta.id) { mutableStateOf(false) }
 
     val camara = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicturePreview()
@@ -122,7 +123,8 @@ fun PerfilCuentaScreen(
                 AvatarCuenta(
                     foto = cuenta.foto,
                     descripcion = "Foto de perfil",
-                    tamano = Dimens.tamanoAvatar
+                    tamano = Dimens.tamanoAvatar,
+                    avatarUrl = cuenta.avatarUrl
                 )
             } else {
                 AvatarImagen(
@@ -196,13 +198,16 @@ fun PerfilCuentaScreen(
                     ) { Text("Descartar") }
                     Button(
                         modifier = Modifier.weight(1f),
+                        enabled = !subiendo,
                         onClick = {
-                            val error = runCatching { onGuardarFoto(pendiente) }
-                                .getOrElse { it.message ?: "No se pudo guardar la foto" }
-                            mensaje = error ?: "Foto actualizada"
-                            if (error == null) fotoPendiente = null
+                            subiendo = true
+                            onGuardarFoto(pendiente) { error ->
+                                subiendo = false
+                                mensaje = error ?: "Foto actualizada en el servidor"
+                                if (error == null) fotoPendiente = null
+                            }
                         }
-                    ) { Text("Guardar") }
+                    ) { Text(if (subiendo) "Subiendo" else "Guardar") }
                 }
             }
 
@@ -235,7 +240,7 @@ internal fun PerfilCuentaScreenPreview() {
     SegurosBpoTheme {
         PerfilCuentaScreen(
             cuenta = Muestras.asegurada,
-            onGuardarFoto = { null },
+            onGuardarFoto = { _, listo -> listo(null) },
             onEditar = {},
             onVolver = {},
             onCerrarSesion = {}

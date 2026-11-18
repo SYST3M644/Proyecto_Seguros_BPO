@@ -1,5 +1,9 @@
 package cl.duocuc.segurosbpo.ui.components
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -9,9 +13,13 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import cl.duocuc.segurosbpo.R
+import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 import androidx.compose.ui.tooling.preview.Preview
 
@@ -31,13 +39,29 @@ val LocalAccionesBarra = compositionLocalOf { AccionesBarra() }
 fun BarraSuperior(
     titulo: String,
     onVolver: (() -> Unit)? = null,
-    destacada: Boolean = false
+    destacada: Boolean = false,
+    conLogo: Boolean = true
 ) {
     val acciones = LocalAccionesBarra.current
     val volver = onVolver ?: if (acciones.puedeVolver) acciones.onVolver else null
 
     TopAppBar(
-        title = { Text(titulo, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
+            ) {
+                if (conLogo) {
+                    Image(
+                        painter = painterResource(R.drawable.mi_siniestro_logo),
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.size(Dimens.tamanoLogoBarra)
+                    )
+                }
+                Text(titulo, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        },
         navigationIcon = {
             if (volver != null) {
                 IconButton(onClick = volver) {

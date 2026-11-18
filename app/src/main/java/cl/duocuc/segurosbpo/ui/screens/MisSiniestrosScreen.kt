@@ -44,6 +44,7 @@ import cl.duocuc.segurosbpo.ui.theme.Dimens
 fun MisSiniestrosScreen(
     asegurado: Asegurado,
     fotoCuenta: ByteArray?,
+    avatarUrl: String? = null,
     actualizadoEn: String,
     siniestros: List<Siniestro>,
     busqueda: String,
@@ -77,7 +78,8 @@ fun MisSiniestrosScreen(
                 AvatarCuenta(
                     foto = fotoCuenta,
                     descripcion = stringResource(R.string.cd_foto_asegurado),
-                    tamano = Dimens.tamanoAdjunto
+                    tamano = Dimens.tamanoAdjunto,
+                    avatarUrl = avatarUrl
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(Dimens.espacioMini)) {
                     Text(stringResource(R.string.etiqueta_asegurado_actual, asegurado.etiqueta))

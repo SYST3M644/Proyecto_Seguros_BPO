@@ -15,7 +15,9 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
+import coil3.compose.AsyncImage
 import androidx.compose.ui.tooling.preview.Preview
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
@@ -26,8 +28,24 @@ fun AvatarCuenta(
     foto: ByteArray?,
     descripcion: String,
     modifier: Modifier = Modifier,
-    tamano: Dp = Dimens.tamanoAvatar
+    tamano: Dp = Dimens.tamanoAvatar,
+    avatarUrl: String? = null
 ) {
+    if (!avatarUrl.isNullOrBlank()) {
+        AsyncImage(
+            model = avatarUrl,
+            contentDescription = descripcion,
+            contentScale = ContentScale.Crop,
+            placeholder = painterResource(R.drawable.avatar_usuario),
+            error = painterResource(R.drawable.avatar_usuario),
+            modifier = modifier
+                .size(tamano)
+                .shadow(elevation = Dimens.elevacionAvatar, shape = CircleShape)
+                .clip(CircleShape)
+                .border(Dimens.bordeAvatar, MaterialTheme.colorScheme.surface, CircleShape)
+        )
+        return
+    }
     val imagen = remember(foto) {
         foto?.let { bytes ->
             BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
