@@ -4,16 +4,21 @@ import android.app.Application
 import android.graphics.Bitmap
 import java.io.ByteArrayOutputStream
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import cl.duocuc.segurosbpo.data.ArchivoRepository
 import cl.duocuc.segurosbpo.data.CuentaDbHelper
+import cl.duocuc.segurosbpo.data.remote.UsuarioResponse
 import cl.duocuc.segurosbpo.model.CuentaLocal
 import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.RolCuenta
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 class CuentaSesionViewModel(application: Application) : AndroidViewModel(application) {
     private val db = CuentaDbHelper(application)
     private val preferencias = application.getSharedPreferences("cuenta_sesion_local", 0)
+    private val archivos = ArchivoRepository()
 
     private fun cargar(): List<CuentaLocal> =
         runCatching { db.listar() }.getOrDefault(emptyList())
@@ -32,6 +37,27 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
         if (_cuenta.value == null && preferencias.contains("cuenta_id")) {
             preferencias.edit().remove("cuenta_id").apply()
         }
+    }
+
+    fun iniciarSesionRemota(usuario: UsuarioResponse) {
+        val rol = when (usuario.rolId) {
+            "2" -> RolCuenta.LIQUIDADOR
+            "3" -> RolCuenta.ANALISTA
+            else -> RolCuenta.ASEGURADO
+        }
+        val cuenta = CuentaLocal(
+            id = "API_" + usuario.id,
+            nombre = usuario.nombre,
+            rut = usuario.rut.orEmpty(),
+            correo = usuario.correo,
+            telefono = "",
+            rol = rol,
+            equipo = usuario.equipo,
+            avatarUrl = usuario.avatarUrl
+        )
+        preferencias.edit().putString("cuenta_id", cuenta.id).apply()
+        _usuarios.value = (_usuarios.value.filterNot { it.id == cuenta.id }) + cuenta
+        _cuenta.value = cuenta
     }
 
     fun seleccionar(id: String) {
@@ -56,6 +82,31 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
             onSuccess = { _cuenta.value = it; _usuarios.value = cargar(); null },
             onFailure = { mensajeError(it, "No se pudo guardar") }
         )
+    }
+
+    fun subirFotoAlServidor(bitmap: Bitmap, onListo: (String?) -> Unit) {
+        val actual = _cuenta.value
+        val id = actual?.id?.removePrefix("API_")
+        if (actual == null || id.isNullOrBlank()) {
+            onListo("Inicia sesión para cambiar tu foto")
+            return
+        }
+        val salida = ByteArrayOutputStream()
+        if (!runCatching { bitmap.compress(Bitmap.CompressFormat.JPEG, 82, salida) }
+                .getOrDefault(false)) {
+            onListo("No se pudo procesar la fotografía")
+            return
+        }
+        viewModelScope.launch {
+            val resultado = runCatching { archivos.subirAvatar(id, salida.toByteArray()) }
+            resultado.fold(
+                onSuccess = { usuario ->
+                    _cuenta.value = actual.copy(avatarUrl = usuario.avatarUrl, foto = null)
+                    onListo(null)
+                },
+                onFailure = { onListo(it.message ?: "No se pudo subir la foto") }
+            )
+        }
     }
 
     fun actualizarFoto(bitmap: Bitmap): String? {
