@@ -35,7 +35,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import cl.duocuc.segurosbpo.ui.screens.SeleccionUsuarioScreen
+import cl.duocuc.segurosbpo.ui.screens.LoginScreen
+import cl.duocuc.segurosbpo.ui.screens.AsignarRemotoScreen
+import cl.duocuc.segurosbpo.ui.screens.ReportarRemotoScreen
+import cl.duocuc.segurosbpo.ui.screens.SiniestrosRemotosScreen
 import cl.duocuc.segurosbpo.ui.screens.AsignacionCasosScreen
 import cl.duocuc.segurosbpo.ui.screens.AvisosScreen
 import cl.duocuc.segurosbpo.ui.screens.CargaEquiposScreen
@@ -60,6 +63,7 @@ import cl.duocuc.segurosbpo.model.RolCuenta
 import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.comoAsegurado
 import cl.duocuc.segurosbpo.viewmodel.CuentaSesionViewModel
+import cl.duocuc.segurosbpo.viewmodel.SiniestrosRemotosViewModel
 import cl.duocuc.segurosbpo.viewmodel.SiniestrosViewModel
 
 fun idDesdeArgumentos(argumentos: Bundle?): Long = argumentos?.getLong("id") ?: 0L
@@ -85,6 +89,7 @@ private fun BarraInferior(
     cantidadPorAsignar: Int,
     onNavegar: (String) -> Unit,
     onPerfil: () -> Unit,
+    onSiniestrosApi: () -> Unit,
     onCambiarUsuario: () -> Unit
 ) {
     var menuAbierto by remember { mutableStateOf(false) }
@@ -189,6 +194,19 @@ private fun BarraInferior(
                         }
                     )
                     DropdownMenuItem(
+                        text = { Text("Casos en el servidor") },
+                        leadingIcon = {
+                            Icon(
+                                painterResource(R.drawable.ic_estadisticas),
+                                contentDescription = null
+                            )
+                        },
+                        onClick = {
+                            menuAbierto = false
+                            onSiniestrosApi()
+                        }
+                    )
+                    DropdownMenuItem(
                         text = { Text("Cambiar de usuario") },
                         leadingIcon = {
                             Icon(
@@ -255,15 +273,13 @@ fun AppNavegacion(
                 onAlternarTema = onAlternarTema
             )
         ) {
-            SeleccionUsuarioScreen(
-                usuarios = usuarios,
-                onSeleccionar = cuentaVm::seleccionar
-            )
+            LoginScreen(onSesionIniciada = cuentaVm::iniciarSesionRemota)
         }
         return
     }
     val navController = rememberNavController()
     val siniestrosVm: SiniestrosViewModel = viewModel()
+    val remotosVm: SiniestrosRemotosViewModel = viewModel()
     val asegurado by siniestrosVm.asegurado.collectAsStateWithLifecycle()
     val siniestros by siniestrosVm.siniestros.collectAsStateWithLifecycle()
     val estadisticasAsegurado by siniestrosVm.estadisticasAsegurado.collectAsStateWithLifecycle()
@@ -291,6 +307,9 @@ fun AppNavegacion(
     val tipos by siniestrosVm.tipos.collectAsStateWithLifecycle()
     val cargaPersonas by siniestrosVm.cargaPersonas.collectAsStateWithLifecycle()
 
+    val idRemoto = remember(sesion.id) {
+        sesion.id.removePrefix("API_")
+    }
     val equipoSesion = remember(sesion.id, sesion.equipo) {
         sesion.equipo?.let { runCatching { Liquidador.valueOf(it) }.getOrNull() }
     }
@@ -338,10 +357,17 @@ fun AppNavegacion(
                 composable(Ruta.Perfil.ruta) {
                     PerfilCuentaScreen(
                         cuenta = sesion,
-                        onGuardarFoto = cuentaVm::actualizarFoto,
+                        onGuardarFoto = cuentaVm::subirFotoAlServidor,
                         onEditar = { navController.navigate(Ruta.EditarPerfil.ruta) },
                         onVolver = { navController.navigateUp() },
                         onCerrarSesion = cuentaVm::cerrarSesion
+                    )
+                }
+                composable(Ruta.SiniestrosApi.ruta) {
+                    SiniestrosRemotosScreen(
+                        usuarioId = idRemoto,
+                        rol = sesion.rol,
+                        viewModel = remotosVm
                     )
                 }
                 composable(Ruta.EditarPerfil.ruta) {
@@ -354,6 +380,9 @@ fun AppNavegacion(
 
                 if (sesion.rol == RolCuenta.ANALISTA) {
                     composable(Ruta.Analista.ruta) {
+                        AsignarRemotoScreen(viewModel = remotosVm)
+                    }
+                    composable(Ruta.AnalistaLocal.ruta) {
                         AsignacionCasosScreen(
                             pendientes = sinAsignar,
                             carga = cargaEquipos,
@@ -400,6 +429,7 @@ fun AppNavegacion(
                         MisSiniestrosScreen(
                             asegurado = asegurado,
                             fotoCuenta = sesion.foto,
+                            avatarUrl = sesion.avatarUrl,
                             actualizadoEn = actualizadoEn,
                             siniestros = siniestros,
                             busqueda = busqueda,
@@ -425,6 +455,18 @@ fun AppNavegacion(
                         )
                     }
                     composable(Ruta.Reportar.ruta) {
+                        ReportarRemotoScreen(
+                            aseguradoId = idRemoto,
+                            viewModel = remotosVm,
+                            onRegistrado = {
+                                navController.navigate(Ruta.SiniestrosApi.ruta) {
+                                    popUpTo(Ruta.MisSiniestros.ruta)
+                                    launchSingleTop = true
+                                }
+                            }
+                        )
+                    }
+                    composable(Ruta.ReportarLocal.ruta) {
                         FormularioScreen(
                             aseguradoActual = asegurado,
                             onRegistroExitoso = siniestrosVm::registrar,
@@ -658,6 +700,7 @@ fun AppNavegacion(
                     }
                 },
                 onPerfil = { navController.navigate(Ruta.Perfil.ruta) },
+                onSiniestrosApi = { navController.navigate(Ruta.SiniestrosApi.ruta) },
                 onCambiarUsuario = cuentaVm::cerrarSesion
             )
         }

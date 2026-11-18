@@ -14,6 +14,9 @@ sealed class Ruta(val ruta: String) {
     data object CargaEquipos : Ruta("carga_equipos")
     data object Liquidadores : Ruta("liquidadores")
     data object Catalogo : Ruta("catalogo")
+    data object SiniestrosApi : Ruta("siniestros_api")
+    data object ReportarLocal : Ruta("reportar_local")
+    data object AnalistaLocal : Ruta("analista_local")
     data object DocumentosLiquidador : Ruta("documentos_liquidador/{id}") {
         fun crear(id: Long) = "documentos_liquidador/$id"
     }
