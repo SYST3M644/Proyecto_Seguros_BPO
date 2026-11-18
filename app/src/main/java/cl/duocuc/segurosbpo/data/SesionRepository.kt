@@ -49,7 +49,7 @@ class SesionRepository(
 }
 
 fun UsuarioResponse.rolDeCuenta(): RolCuenta = when (rolId) {
-    2L -> RolCuenta.LIQUIDADOR
-    3L -> RolCuenta.ANALISTA
+    "2" -> RolCuenta.LIQUIDADOR
+    "3" -> RolCuenta.ANALISTA
     else -> RolCuenta.ASEGURADO
 }
