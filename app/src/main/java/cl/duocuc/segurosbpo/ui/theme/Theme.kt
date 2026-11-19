@@ -56,7 +56,7 @@ private val Formas = Shapes(
 
 @Composable
 fun SegurosBpoTheme(content: @Composable () -> Unit) {
-    SegurosBpoTheme(isSystemInDarkTheme(), true, content)
+    SegurosBpoTheme(isSystemInDarkTheme(), false, content)
 }
 
 @Composable
@@ -64,7 +64,7 @@ fun SegurosBpoTheme(
     darkTheme: Boolean,
     content: @Composable () -> Unit
 ) {
-    SegurosBpoTheme(darkTheme, true, content)
+    SegurosBpoTheme(darkTheme, false, content)
 }
 
 @Composable
