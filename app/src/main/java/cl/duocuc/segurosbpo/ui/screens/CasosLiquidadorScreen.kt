@@ -1,5 +1,6 @@
 package cl.duocuc.segurosbpo.ui.screens
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,11 +26,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
@@ -42,6 +46,7 @@ import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import cl.duocuc.segurosbpo.ui.components.EtiquetaInteres
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.viewmodel.SiniestrosViewModel
+import kotlinx.coroutines.launch
 
 private val RESULTADOS = listOf("Aprobado", "Aprobado con descuento", "Rechazado")
 
@@ -55,10 +60,12 @@ fun CasosLiquidadorScreen(
     val casos by viewModel.siniestros.collectAsStateWithLifecycle()
     val gestiones by viewModel.gestiones.collectAsStateWithLifecycle()
     val solicitudes by viewModel.solicitudes.collectAsStateWithLifecycle()
+    val evidencias by viewModel.evidencias.collectAsStateWithLifecycle()
     val cargando by viewModel.cargando.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val mensaje by viewModel.aviso.collectAsStateWithLifecycle()
     val aviso = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     var busqueda by rememberSaveable { mutableStateOf("") }
     var abierto by rememberSaveable { mutableStateOf("") }
@@ -67,6 +74,15 @@ fun CasosLiquidadorScreen(
     var resultado by rememberSaveable { mutableStateOf(RESULTADOS.first()) }
     var mensajeCierre by rememberSaveable { mutableStateOf("") }
     var documentoPedido by rememberSaveable { mutableStateOf("") }
+
+    val contexto = LocalContext.current
+    val abrirArchivo: (String) -> Unit = { url ->
+        runCatching {
+            contexto.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
+        }.onFailure {
+            scope.launch { aviso.showSnackbar("No se pudo abrir el documento") }
+        }
+    }
 
     LaunchedEffect(liquidadorId) {
         if (liquidadorId.isNotBlank()) viewModel.cargarDeLiquidador(liquidadorId)
@@ -156,6 +172,7 @@ fun CasosLiquidadorScreen(
                                     if (abierto.isNotBlank()) {
                                         viewModel.cargarGestiones(caso.id)
                                         viewModel.cargarSolicitudes(caso.id)
+                                        viewModel.cargarEvidencias(caso.id)
                                     }
                                 },
                                 modifier = Modifier.fillMaxWidth()
@@ -213,6 +230,48 @@ fun CasosLiquidadorScreen(
                                     },
                                     modifier = Modifier.fillMaxWidth()
                                 )
+
+                                HorizontalDivider()
+
+                                Text(
+                                    stringResource(R.string.etiqueta_evidencias_recibidas),
+                                    style = MaterialTheme.typography.titleSmall
+                                )
+                                if (evidencias.isEmpty()) {
+                                    Text(
+                                        stringResource(R.string.vacio_evidencias),
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                                evidencias.forEach { evidencia ->
+                                    Row(
+                                        Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement =
+                                            Arrangement.spacedBy(Dimens.espacioChico)
+                                    ) {
+                                        Column(Modifier.weight(1f)) {
+                                            Text(
+                                                evidencia.tipoDocumento,
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                            Text(
+                                                evidencia.nombreArchivo + " · " +
+                                                    (evidencia.tamanoBytes / 1024) + " KB",
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                            Text(
+                                                evidencia.fechaRegistro + " · " +
+                                                    evidencia.subidoPor,
+                                                style = MaterialTheme.typography.labelSmall
+                                            )
+                                        }
+                                        BotonSecundario(
+                                            texto = stringResource(R.string.btn_abrir),
+                                            onClick = { abrirArchivo(evidencia.archivoUrl) }
+                                        )
+                                    }
+                                }
 
                                 HorizontalDivider()
 

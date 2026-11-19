@@ -190,4 +190,7 @@
     <string name="campo_documento_pedido">Qué documento necesitas</string>
     <string name="btn_pedir_documento">Pedir documento</string>
     <string name="btn_anular">Anular</string>
+    <string name="etiqueta_evidencias_recibidas">Documentos recibidos</string>
+    <string name="vacio_evidencias">Todavía no hay documentos en este caso.</string>
+    <string name="btn_abrir">Abrir</string>
 </resources>
