@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Checkbox
@@ -26,6 +27,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -100,6 +102,10 @@ fun FormularioScreen(
     }
 
     var destinoFoto by rememberSaveable { mutableStateOf<Uri?>(null) }
+    var nombreFoto by rememberSaveable { mutableStateOf("") }
+    var pidiendoNombre by rememberSaveable { mutableStateOf(false) }
+    var renombrando by rememberSaveable { mutableStateOf(-1) }
+    var nombreEnEdicion by rememberSaveable { mutableStateOf("") }
 
     val tomarFoto = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
@@ -114,8 +120,13 @@ fun FormularioScreen(
         }
         val foto = runCatching { ProcesadorEvidencia.desdeCaptura(contexto, destino) }
         CapturaFoto.borrar(contexto, destino)
+        val elegido = nombreFoto.trim()
         foto.fold(
-            onSuccess = { evidencias = (evidencias + it).take(15) },
+            onSuccess = { archivo ->
+                val conNombre =
+                    if (elegido.isEmpty()) archivo else archivo.copy(nombre = elegido)
+                evidencias = (evidencias + conNombre).take(15)
+            },
             onFailure = {
                 scope.launch {
                     aviso.showSnackbar(it.message ?: "No se pudo adjuntar la fotografía")
@@ -281,8 +292,9 @@ fun FormularioScreen(
                 BotonSecundario(
                     texto = stringResource(R.string.btn_tomar_foto),
                     onClick = {
-                        if (Permisos.tiene(contexto, Permisos.CAMARA)) abrirCamara()
-                        else permisoCamara.launch(Permisos.CAMARA)
+                        nombreEnEdicion = documentosPedidos.getOrNull(evidencias.size)
+                            ?: ("Fotografía " + (evidencias.size + 1))
+                        pidiendoNombre = true
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -293,8 +305,97 @@ fun FormularioScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                evidencias.forEach { archivo ->
-                    Card(Modifier.fillMaxWidth()) {
+                if (pidiendoNombre) {
+                    AlertDialog(
+                        onDismissRequest = { pidiendoNombre = false },
+                        title = { Text(stringResource(R.string.titulo_nombre_evidencia)) },
+                        text = {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
+                            ) {
+                                Text(
+                                    stringResource(R.string.ayuda_nombre_evidencia),
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                OutlinedTextField(
+                                    value = nombreEnEdicion,
+                                    onValueChange = { nombreEnEdicion = it },
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(
+                                enabled = nombreEnEdicion.isNotBlank(),
+                                onClick = {
+                                    pidiendoNombre = false
+                                    nombreFoto = nombreEnEdicion.trim()
+                                    if (Permisos.tiene(contexto, Permisos.CAMARA)) {
+                                        abrirCamara()
+                                    } else {
+                                        permisoCamara.launch(Permisos.CAMARA)
+                                    }
+                                }
+                            ) { Text(stringResource(R.string.btn_tomar_foto)) }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { pidiendoNombre = false }) {
+                                Text(stringResource(R.string.btn_cancelar))
+                            }
+                        }
+                    )
+                }
+
+                if (renombrando >= 0) {
+                    AlertDialog(
+                        onDismissRequest = { renombrando = -1 },
+                        title = { Text(stringResource(R.string.titulo_renombrar_evidencia)) },
+                        text = {
+                            OutlinedTextField(
+                                value = nombreEnEdicion,
+                                onValueChange = { nombreEnEdicion = it },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        },
+                        confirmButton = {
+                            TextButton(
+                                enabled = nombreEnEdicion.isNotBlank(),
+                                onClick = {
+                                    val posicion = renombrando
+                                    val nuevo = nombreEnEdicion.trim()
+                                    renombrando = -1
+                                    evidencias = evidencias.mapIndexed { indice, archivo ->
+                                        if (indice == posicion) archivo.copy(nombre = nuevo)
+                                        else archivo
+                                    }
+                                }
+                            ) { Text(stringResource(R.string.btn_guardar_nombre)) }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { renombrando = -1 }) {
+                                Text(stringResource(R.string.btn_cancelar))
+                            }
+                        }
+                    )
+                }
+
+                if (evidencias.isNotEmpty()) {
+                    Text(
+                        stringResource(R.string.ayuda_tocar_renombrar),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                evidencias.forEachIndexed { posicion, archivo ->
+                    Card(
+                        onClick = {
+                            nombreEnEdicion = archivo.nombre
+                            renombrando = posicion
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Row(
                             Modifier.fillMaxWidth().padding(Dimens.espacioChico),
                             verticalAlignment = Alignment.CenterVertically,
@@ -308,7 +409,11 @@ fun FormularioScreen(
                             )
                             BotonSecundario(
                                 texto = stringResource(R.string.btn_quitar),
-                                onClick = { evidencias = evidencias - archivo }
+                                onClick = {
+                                    evidencias = evidencias.filterIndexed { indice, _ ->
+                                        indice != posicion
+                                    }
+                                }
                             )
                         }
                     }
@@ -325,11 +430,10 @@ fun FormularioScreen(
                                 fecha, comuna, descripcion, terceros
                             ) { nuevo ->
                                 if (nuevo != null) {
-                                    evidencias.forEachIndexed { posicion, archivo ->
+                                    evidencias.forEach { archivo ->
                                         viewModel.subirEvidencia(
                                             nuevo.id,
-                                            documentosPedidos.getOrNull(posicion)
-                                                ?: "Evidencia del siniestro",
+                                            archivo.nombre,
                                             nuevo.aseguradoNombre.orEmpty(),
                                             archivo.nombre,
                                             archivo.mime,

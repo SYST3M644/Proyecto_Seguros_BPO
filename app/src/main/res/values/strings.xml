@@ -16,6 +16,11 @@
     <string name="ayuda_documentos_pedidos">Para este tipo de siniestro se piden: %1$s</string>
     <string name="btn_tomar_foto">Tomar fotografía</string>
     <string name="btn_elegir_galeria">Elegir de la galería</string>
+    <string name="titulo_nombre_evidencia">Nombre de la fotografía</string>
+    <string name="ayuda_nombre_evidencia">Así la reconoces después. Puedes usar uno de los documentos pedidos.</string>
+    <string name="titulo_renombrar_evidencia">Cambiar el nombre</string>
+    <string name="btn_guardar_nombre">Guardar</string>
+    <string name="ayuda_tocar_renombrar">Toca un archivo para cambiarle el nombre.</string>
     <string name="btn_quitar">Quitar</string>
     <string name="vacio_busqueda">Ningún caso coincide con la búsqueda.</string>
     <string name="campo_comuna">Comuna donde ocurrió</string>
