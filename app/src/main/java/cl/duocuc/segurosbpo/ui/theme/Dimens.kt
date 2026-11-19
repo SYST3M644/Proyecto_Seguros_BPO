@@ -24,6 +24,7 @@ object Dimens {
 
 
     val radioCampo = 12.dp
+    val altoMaximoDesplegable = 320.dp
 
 
     val radioTarjeta = 20.dp

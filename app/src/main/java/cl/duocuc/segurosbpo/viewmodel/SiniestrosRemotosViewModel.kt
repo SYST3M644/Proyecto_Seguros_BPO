@@ -7,8 +7,10 @@ import cl.duocuc.segurosbpo.data.CatalogoRepository
 import cl.duocuc.segurosbpo.data.SesionRepository
 import cl.duocuc.segurosbpo.data.SiniestroRepository
 import cl.duocuc.segurosbpo.data.remote.CompaniaResponse
+import cl.duocuc.segurosbpo.data.remote.ComunaResponse
 import cl.duocuc.segurosbpo.data.remote.EvidenciaResponse
 import cl.duocuc.segurosbpo.data.remote.GestionResponse
+import cl.duocuc.segurosbpo.data.remote.RegionResponse
 import cl.duocuc.segurosbpo.data.remote.RegistrarSiniestroRequest
 import cl.duocuc.segurosbpo.data.remote.SiniestroResponse
 import cl.duocuc.segurosbpo.data.remote.TipoSiniestroResponse
@@ -38,6 +40,12 @@ class SiniestrosRemotosViewModel(
 
     private val _tipos = MutableStateFlow<List<TipoSiniestroResponse>>(emptyList())
     val tipos = _tipos.asStateFlow()
+
+    private val _regiones = MutableStateFlow<List<RegionResponse>>(emptyList())
+    val regiones = _regiones.asStateFlow()
+
+    private val _comunas = MutableStateFlow<List<ComunaResponse>>(emptyList())
+    val comunas = _comunas.asStateFlow()
 
     private val _liquidadores = MutableStateFlow<List<UsuarioResponse>>(emptyList())
     val liquidadores = _liquidadores.asStateFlow()
@@ -70,7 +78,13 @@ class SiniestrosRemotosViewModel(
         ejecutar {
             _companias.value = catalogos.listarCompanias()
             _tipos.value = catalogos.listarTipos()
+            _regiones.value = catalogos.listarRegiones()
         }
+    }
+
+    fun cargarComunas(regionCodigo: String) {
+        _comunas.value = emptyList()
+        ejecutar { _comunas.value = catalogos.listarComunas(regionCodigo) }
     }
 
     fun registrar(

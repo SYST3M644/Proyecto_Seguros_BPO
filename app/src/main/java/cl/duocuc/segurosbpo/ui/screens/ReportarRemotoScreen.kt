@@ -37,6 +37,7 @@ import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.BotonPrincipal
+import cl.duocuc.segurosbpo.ui.components.CampoDesplegable
 import cl.duocuc.segurosbpo.ui.components.LocalAccionesBarra
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.viewmodel.SiniestrosRemotosViewModel
@@ -54,6 +55,8 @@ fun ReportarRemotoScreen(
     val contexto = LocalContext.current
     val companias by viewModel.companias.collectAsStateWithLifecycle()
     val tipos by viewModel.tipos.collectAsStateWithLifecycle()
+    val regiones by viewModel.regiones.collectAsStateWithLifecycle()
+    val comunas by viewModel.comunas.collectAsStateWithLifecycle()
     val cargando by viewModel.cargando.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val aviso = remember { SnackbarHostState() }
@@ -61,6 +64,7 @@ fun ReportarRemotoScreen(
     var companiaCodigo by rememberSaveable { mutableStateOf("") }
     var tipoCodigo by rememberSaveable { mutableStateOf("") }
     var fecha by rememberSaveable { mutableStateOf("") }
+    var regionCodigo by rememberSaveable { mutableStateOf("") }
     var comuna by rememberSaveable { mutableStateOf("") }
     var descripcion by rememberSaveable { mutableStateOf("") }
     var terceros by rememberSaveable { mutableStateOf(false) }
@@ -152,12 +156,23 @@ fun ReportarRemotoScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                OutlinedTextField(
-                    value = comuna,
-                    onValueChange = { comuna = it },
-                    label = { Text(stringResource(R.string.campo_comuna)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                CampoDesplegable(
+                    etiqueta = stringResource(R.string.campo_region),
+                    seleccionado = regiones.firstOrNull { it.codigo == regionCodigo }?.nombre ?: "",
+                    opciones = regiones.map { it.nombre },
+                    onElegir = { nombre ->
+                        regionCodigo = regiones.first { it.nombre == nombre }.codigo
+                        comuna = ""
+                        viewModel.cargarComunas(regionCodigo)
+                    }
+                )
+
+                CampoDesplegable(
+                    etiqueta = stringResource(R.string.campo_comuna),
+                    seleccionado = comuna,
+                    opciones = comunas.map { it.nombre },
+                    onElegir = { comuna = it },
+                    habilitado = regionCodigo.isNotBlank()
                 )
 
                 OutlinedTextField(
@@ -184,6 +199,7 @@ fun ReportarRemotoScreen(
                                 fecha, comuna, descripcion, terceros
                             ) { nuevo ->
                                 if (nuevo != null) {
+                                    regionCodigo = ""
                                     comuna = ""
                                     descripcion = ""
                                     fecha = ""

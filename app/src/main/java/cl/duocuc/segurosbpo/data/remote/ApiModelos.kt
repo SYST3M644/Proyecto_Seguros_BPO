@@ -37,6 +37,19 @@ data class TipoSiniestroResponse(
     val documentos: List<String>
 )
 
+data class RegionResponse(
+    val id: String,
+    val codigo: String,
+    val nombre: String,
+    val orden: Int
+)
+
+data class ComunaResponse(
+    val id: String,
+    val regionCodigo: String,
+    val nombre: String
+)
+
 data class CompaniaRequest(
     val nombre: String,
     val plazoDiasHabiles: Int,

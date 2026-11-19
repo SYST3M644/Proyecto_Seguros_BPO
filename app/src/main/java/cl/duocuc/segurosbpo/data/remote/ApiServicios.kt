@@ -32,6 +32,12 @@ interface RolApi {
 
 interface CatalogoApi {
 
+    @GET("api/regiones")
+    suspend fun listarRegiones(): List<RegionResponse>
+
+    @GET("api/regiones/{codigo}/comunas")
+    suspend fun listarComunas(@Path("codigo") regionCodigo: String): List<ComunaResponse>
+
     @GET("api/companias")
     suspend fun listarCompanias(): List<CompaniaResponse>
 

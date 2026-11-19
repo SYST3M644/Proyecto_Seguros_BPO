@@ -3,6 +3,8 @@ package cl.duocuc.segurosbpo.data
 import cl.duocuc.segurosbpo.data.remote.CatalogoApi
 import cl.duocuc.segurosbpo.data.remote.CompaniaRequest
 import cl.duocuc.segurosbpo.data.remote.CompaniaResponse
+import cl.duocuc.segurosbpo.data.remote.ComunaResponse
+import cl.duocuc.segurosbpo.data.remote.RegionResponse
 import cl.duocuc.segurosbpo.data.remote.RetrofitClient
 import cl.duocuc.segurosbpo.data.remote.TipoSiniestroRequest
 import cl.duocuc.segurosbpo.data.remote.TipoSiniestroResponse
@@ -15,6 +17,14 @@ import java.io.IOException
 class CatalogoRepository(
     private val catalogoApi: CatalogoApi = RetrofitClient.catalogoApi
 ) {
+
+    suspend fun listarRegiones(): List<RegionResponse> = llamar {
+        catalogoApi.listarRegiones()
+    }
+
+    suspend fun listarComunas(regionCodigo: String): List<ComunaResponse> = llamar {
+        catalogoApi.listarComunas(regionCodigo)
+    }
 
     suspend fun listarCompanias(): List<CompaniaResponse> = llamar {
         catalogoApi.listarCompanias()
