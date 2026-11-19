@@ -10,12 +10,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import cl.duocuc.segurosbpo.navigation.AppNavegacion
+import cl.duocuc.segurosbpo.permisos.Permisos
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        requestPermissions(arrayOf(Permisos.RED_LOCAL), 0)
         val preferencias = getSharedPreferences("tema_local", MODE_PRIVATE)
         setContent {
             val sistemaOscuro = isSystemInDarkTheme()

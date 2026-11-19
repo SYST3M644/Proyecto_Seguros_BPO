@@ -11,6 +11,8 @@ import androidx.core.content.ContextCompat
 
 object Permisos {
 
+    const val RED_LOCAL: String = "android.permission.ACCESS_LOCAL_NETWORK"
+
     val CAMARA: String = Manifest.permission.CAMERA
 
     val IMAGENES: String =
