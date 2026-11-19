@@ -6,6 +6,7 @@ import cl.duocuc.segurosbpo.data.remote.LoginRequest
 import cl.duocuc.segurosbpo.data.remote.PreguntaResponse
 import cl.duocuc.segurosbpo.data.remote.RecuperarRequest
 import cl.duocuc.segurosbpo.data.remote.RegistroRequest
+import cl.duocuc.segurosbpo.data.remote.SesionToken
 import cl.duocuc.segurosbpo.data.remote.RetrofitClient
 import cl.duocuc.segurosbpo.data.remote.RolApi
 import cl.duocuc.segurosbpo.data.remote.UsuarioApi
@@ -22,14 +23,18 @@ class SesionRepository(
     private val rolApi: RolApi = RetrofitClient.rolApi
 ) {
 
-    suspend fun iniciarSesion(correo: String, contrasena: String): UsuarioResponse =
-        llamar { usuarioApi.iniciarSesion(LoginRequest(correo.trim(), contrasena)) }
+    suspend fun iniciarSesion(correo: String, contrasena: String): UsuarioResponse = llamar {
+        val respuesta = usuarioApi.iniciarSesion(LoginRequest(correo.trim(), contrasena))
+        SesionToken.guardar(respuesta.token)
+        respuesta.usuario
+    }
 
     suspend fun registrar(
         nombre: String,
         correo: String,
         contrasena: String,
         rut: String,
+        direccion: String? = null,
         equipo: String? = null,
         rolId: String? = null,
         pregunta: String? = null,
@@ -37,8 +42,15 @@ class SesionRepository(
     ): UsuarioResponse = llamar {
         usuarioApi.registrar(
             RegistroRequest(
-                nombre.trim(), correo.trim(), contrasena, rut.trim(),
-                equipo, rolId, pregunta, respuesta
+                nombre = nombre.trim(),
+                correo = correo.trim(),
+                contrasena = contrasena,
+                rut = rut.trim(),
+                direccion = direccion?.trim(),
+                equipo = equipo,
+                rolId = rolId,
+                pregunta = pregunta,
+                respuesta = respuesta
             )
         )
     }
@@ -56,12 +68,20 @@ class SesionRepository(
         nombre: String,
         correo: String,
         rut: String,
+        direccion: String? = null,
         equipo: String? = null,
         rolId: String? = null
     ): UsuarioResponse = llamar {
         usuarioApi.actualizar(
             id,
-            ActualizarUsuarioRequest(nombre.trim(), correo.trim(), rut.trim(), equipo, rolId)
+            ActualizarUsuarioRequest(
+                nombre = nombre.trim(),
+                correo = correo.trim(),
+                rut = rut.trim(),
+                direccion = direccion?.trim(),
+                equipo = equipo,
+                rolId = rolId
+            )
         )
     }
 
@@ -71,6 +91,15 @@ class SesionRepository(
 
     suspend fun listarUsuarios(buscar: String = ""): List<UsuarioResponse> =
         llamar { usuarioApi.listar(buscar.ifBlank { null }) }
+
+    suspend fun listarPendientes(): List<UsuarioResponse> =
+        llamar { usuarioApi.pendientes() }
+
+    suspend fun aprobarAsegurado(id: String): UsuarioResponse =
+        llamar { usuarioApi.aprobar(id) }
+
+    suspend fun rechazarAsegurado(id: String): UsuarioResponse =
+        llamar { usuarioApi.rechazar(id) }
 
     suspend fun listarRoles(): List<String> =
         llamar { rolApi.listar() }.map { it.nombre }
@@ -90,6 +119,7 @@ class SesionRepository(
         if (!mensaje.isNullOrBlank()) return mensaje
         return when (error.code()) {
             401 -> "El correo o la contraseña no son correctos"
+            403 -> "Tu cuenta todavía no está aprobada por el analista"
             404 -> "No encontramos lo que buscabas"
             503 -> "Un servicio necesario no está disponible"
             else -> "El servidor respondió con un error " + error.code()

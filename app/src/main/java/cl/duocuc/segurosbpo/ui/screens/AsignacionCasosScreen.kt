@@ -32,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
+import cl.duocuc.segurosbpo.ui.components.ActualizarDeslizando
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.BuscadorCasos
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
@@ -72,7 +73,11 @@ fun AsignacionCasosScreen(viewModel: SiniestrosViewModel) {
     Scaffold(
         topBar = { BarraSuperior(stringResource(R.string.titulo_asignar)) }
     ) { margen ->
-        Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
+        ActualizarDeslizando(
+            cargando = cargando,
+            onActualizar = { viewModel.cargarSinAsignar() },
+            modifier = Modifier.fillMaxSize().padding(margen).imePadding()
+        ) {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                     .padding(Dimens.espacioMedio),

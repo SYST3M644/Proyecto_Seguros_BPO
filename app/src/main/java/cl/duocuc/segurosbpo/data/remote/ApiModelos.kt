@@ -10,10 +10,17 @@ data class UsuarioResponse(
     val nombre: String,
     val correo: String,
     val rut: String?,
+    val direccion: String?,
     val equipo: String?,
     val rolId: String,
     val rolNombre: String,
+    val estado: String?,
     val avatarUrl: String?
+)
+
+data class LoginResponse(
+    val usuario: UsuarioResponse,
+    val token: String?
 )
 
 data class RolResponse(
@@ -42,6 +49,7 @@ data class RegistroRequest(
     val correo: String,
     val contrasena: String,
     val rut: String,
+    val direccion: String? = null,
     val equipo: String? = null,
     val rolId: String? = null,
     val pregunta: String? = null,
@@ -63,6 +71,7 @@ data class ActualizarUsuarioRequest(
     val nombre: String,
     val correo: String,
     val rut: String,
+    val direccion: String? = null,
     val equipo: String? = null,
     val rolId: String? = null
 )

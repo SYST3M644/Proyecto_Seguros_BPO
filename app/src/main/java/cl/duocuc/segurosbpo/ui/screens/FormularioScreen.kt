@@ -1,6 +1,7 @@
 package cl.duocuc.segurosbpo.ui.screens
 
 import android.app.DatePickerDialog
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -14,13 +15,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,11 +37,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.data.ArchivoEvidencia
+import cl.duocuc.segurosbpo.data.CapturaFoto
 import cl.duocuc.segurosbpo.data.ProcesadorEvidencia
+import cl.duocuc.segurosbpo.permisos.Permisos
 import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.BotonPrincipal
@@ -89,6 +97,58 @@ fun FormularioScreen(
             scope.launch { aviso.showSnackbar("Algunos archivos no se pudieron adjuntar") }
         }
         evidencias = (evidencias + leidas).take(15)
+    }
+
+    var destinoFoto by rememberSaveable { mutableStateOf<Uri?>(null) }
+
+    val tomarFoto = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { tomada ->
+        val destino = destinoFoto
+        destinoFoto = null
+        if (destino == null) return@rememberLauncherForActivityResult
+        if (!tomada) {
+            CapturaFoto.borrar(contexto, destino)
+            scope.launch { aviso.showSnackbar("Captura cancelada") }
+            return@rememberLauncherForActivityResult
+        }
+        val foto = runCatching { ProcesadorEvidencia.desdeCaptura(contexto, destino) }
+        CapturaFoto.borrar(contexto, destino)
+        foto.fold(
+            onSuccess = { evidencias = (evidencias + it).take(15) },
+            onFailure = {
+                scope.launch {
+                    aviso.showSnackbar(it.message ?: "No se pudo adjuntar la fotografía")
+                }
+            }
+        )
+    }
+
+    fun abrirCamara() {
+        val destino = runCatching { CapturaFoto.nuevoDestino(contexto) }.getOrNull()
+        if (destino == null) {
+            scope.launch { aviso.showSnackbar("No se pudo preparar la cámara") }
+            return
+        }
+        destinoFoto = destino
+        tomarFoto.launch(destino)
+    }
+
+    val permisoCamara = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { concedido ->
+        if (concedido) {
+            abrirCamara()
+        } else {
+            scope.launch {
+                val accion = aviso.showSnackbar(
+                    message = "Sin permiso de cámara no se puede tomar la fotografía",
+                    actionLabel = "Ajustes",
+                    duration = SnackbarDuration.Long
+                )
+                if (accion == SnackbarResult.ActionPerformed) Permisos.abrirAjustes(contexto)
+            }
+        }
     }
 
     LaunchedEffect(Unit) { viewModel.cargarCatalogos() }
@@ -162,12 +222,16 @@ fun FormularioScreen(
                     onValueChange = {},
                     readOnly = true,
                     label = { Text(stringResource(R.string.campo_fecha)) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                BotonPrincipal(
-                    texto = stringResource(R.string.btn_elegir_fecha),
-                    onClick = abrirFecha,
-                    modifier = Modifier.fillMaxWidth()
+                    placeholder = { Text(stringResource(R.string.pista_elegir_fecha)) },
+                    trailingIcon = {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_calendario),
+                            contentDescription = null
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { if (it.isFocused) abrirFecha() }
                 )
 
                 CampoDesplegable(
@@ -215,7 +279,16 @@ fun FormularioScreen(
                 }
 
                 BotonSecundario(
-                    texto = stringResource(R.string.btn_adjuntar_evidencias),
+                    texto = stringResource(R.string.btn_tomar_foto),
+                    onClick = {
+                        if (Permisos.tiene(contexto, Permisos.CAMARA)) abrirCamara()
+                        else permisoCamara.launch(Permisos.CAMARA)
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                BotonSecundario(
+                    texto = stringResource(R.string.btn_elegir_galeria),
                     onClick = { seleccionarEvidencias.launch("image/*") },
                     modifier = Modifier.fillMaxWidth()
                 )

@@ -3,9 +3,12 @@ package cl.duocuc.segurosbpo.data
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
 import android.provider.OpenableColumns
 import cl.duocuc.segurosbpo.model.ValidadorEvidencia
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 
 data class ArchivoEvidencia(val nombre: String, val mime: String, val bytes: ByteArray)
@@ -13,6 +16,7 @@ data class ArchivoEvidencia(val nombre: String, val mime: String, val bytes: Byt
 
 object ProcesadorEvidencia {
     private const val MAX_LADO = 1600
+    private const val MAX_CAPTURA = 30 * 1024 * 1024
 
     private val validadoresFirma: Map<String, (ByteArray) -> Boolean> = mapOf(
         "application/pdf" to { bytes ->
@@ -50,6 +54,60 @@ object ProcesadorEvidencia {
         return ArchivoEvidencia("foto_camara.jpg", "image/jpeg", bytes)
     }
 
+    fun desdeCaptura(context: Context, uri: Uri): ArchivoEvidencia {
+        val bytes = leerTodo(context, uri, MAX_CAPTURA, "La fotografía es demasiado grande")
+        require(validadoresFirma.getValue("image/jpeg")(bytes)) {
+            "La cámara no devolvió una fotografía válida"
+        }
+        val foto = comprimirImagen("foto_camara.jpg", bytes, giroDe(bytes))
+        require(foto.bytes.size <= ValidadorEvidencia.MAX_BYTES) {
+            "La fotografía es demasiado grande"
+        }
+        return foto
+    }
+
+    private fun leerTodo(
+        context: Context,
+        uri: Uri,
+        tope: Int,
+        excedido: String
+    ): ByteArray {
+        val salida = ByteArrayOutputStream()
+        val buffer = ByteArray(8192)
+        var total = 0
+        val entrada = context.contentResolver.openInputStream(uri)
+            ?: error("No se pudo abrir el archivo")
+        entrada.use { flujo ->
+            while (true) {
+                val leidos = flujo.read(buffer)
+                if (leidos == -1) break
+                total += leidos
+                require(total <= tope) { excedido }
+                salida.write(buffer, 0, leidos)
+            }
+        }
+        return salida.toByteArray()
+    }
+
+    private fun giroDe(bytes: ByteArray): Int = runCatching {
+        when (
+            ExifInterface(ByteArrayInputStream(bytes))
+                .getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+        ) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> 90
+            ExifInterface.ORIENTATION_ROTATE_180 -> 180
+            ExifInterface.ORIENTATION_ROTATE_270 -> 270
+            else -> 0
+        }
+    }.getOrDefault(0)
+
+    private fun girar(bitmap: Bitmap, grados: Int): Bitmap = runCatching {
+        Bitmap.createBitmap(
+            bitmap, 0, 0, bitmap.width, bitmap.height,
+            Matrix().apply { postRotate(grados.toFloat()) }, true
+        )
+    }.getOrDefault(bitmap)
+
     fun desdeSelector(context: Context, uri: Uri): ArchivoEvidencia {
         val resolver = context.contentResolver
         val mime = resolver.getType(uri).orEmpty().lowercase()
@@ -82,7 +140,11 @@ object ProcesadorEvidencia {
         return comprimirImagen(nombre, bytes)
     }
 
-    private fun comprimirImagen(nombre: String, original: ByteArray): ArchivoEvidencia {
+    private fun comprimirImagen(
+        nombre: String,
+        original: ByteArray,
+        giro: Int = 0
+    ): ArchivoEvidencia {
         val medidas = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(original, 0, original.size, medidas)
         var escala = 1
@@ -95,9 +157,11 @@ object ProcesadorEvidencia {
                 BitmapFactory.Options().apply { inSampleSize = escala }
             )
         }.getOrNull() ?: return ArchivoEvidencia(nombre, "image/jpeg", original)
+        val derecha = if (giro == 0) reducida else girar(reducida, giro)
         val salida = ByteArrayOutputStream()
-        val comprimida = reducida.compress(Bitmap.CompressFormat.JPEG, 80, salida)
-        reducida.recycle()
+        val comprimida = derecha.compress(Bitmap.CompressFormat.JPEG, 80, salida)
+        if (derecha !== reducida) reducida.recycle()
+        derecha.recycle()
         if (!comprimida) return ArchivoEvidencia(nombre, "image/jpeg", original)
         return ArchivoEvidencia(nombre, "image/jpeg", salida.toByteArray())
     }

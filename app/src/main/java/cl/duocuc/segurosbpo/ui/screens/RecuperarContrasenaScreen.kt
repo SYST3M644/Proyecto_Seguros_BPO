@@ -50,6 +50,7 @@ fun RecuperarContrasenaScreen(
     var correo by rememberSaveable { mutableStateOf("") }
     var respuesta by rememberSaveable { mutableStateOf("") }
     var nueva by rememberSaveable { mutableStateOf("") }
+    var repetida by rememberSaveable { mutableStateOf("") }
     var visible by rememberSaveable { mutableStateOf(false) }
 
     val errorCorreo = ValidadorContacto.errorCorreo(correo)
@@ -125,6 +126,17 @@ fun RecuperarContrasenaScreen(
                     } else null,
                     modifier = Modifier.fillMaxWidth()
                 )
+                CampoContrasena(
+                    valor = repetida,
+                    onValorCambia = { repetida = it; viewModel.limpiarError() },
+                    etiqueta = stringResource(R.string.campo_repetir_contrasena),
+                    visible = visible,
+                    onAlternarVisible = { visible = !visible },
+                    error = if (repetida.isNotEmpty() && repetida != nueva) {
+                        stringResource(R.string.error_claves_distintas)
+                    } else null,
+                    modifier = Modifier.fillMaxWidth()
+                )
                 if (cargando) {
                     CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
                 } else {
@@ -132,7 +144,8 @@ fun RecuperarContrasenaScreen(
                         texto = stringResource(R.string.btn_cambiar_contrasena),
                         onClick = { viewModel.recuperar(correo, respuesta, nueva, onListo) },
                         icono = R.drawable.ic_check,
-                        habilitado = respuesta.isNotBlank() && nueva.length >= 6,
+                        habilitado = respuesta.isNotBlank() && nueva.length >= 6 &&
+                            repetida == nueva,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }

@@ -29,6 +29,7 @@ class CuentaNuevaViewModel(
         nombre: String,
         correo: String,
         rut: String,
+        direccion: String,
         contrasena: String,
         pregunta: String,
         respuesta: String,
@@ -43,6 +44,7 @@ class CuentaNuevaViewModel(
                     correo = correo,
                     contrasena = contrasena,
                     rut = rut,
+                    direccion = direccion,
                     pregunta = pregunta,
                     respuesta = respuesta
                 )

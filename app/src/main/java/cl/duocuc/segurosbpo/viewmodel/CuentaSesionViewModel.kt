@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import cl.duocuc.segurosbpo.data.ArchivoRepository
 import cl.duocuc.segurosbpo.data.SesionRepository
+import cl.duocuc.segurosbpo.data.remote.SesionToken
 import cl.duocuc.segurosbpo.data.remote.UsuarioResponse
 import cl.duocuc.segurosbpo.model.CuentaLocal
 import cl.duocuc.segurosbpo.model.Liquidador
@@ -53,6 +54,7 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
         nombre: String,
         correo: String,
         rut: String,
+        direccion: String = "",
         onListo: (String?) -> Unit
     ) {
         val actual = _cuenta.value
@@ -62,12 +64,22 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
             return
         }
         viewModelScope.launch {
-            runCatching { sesion.actualizarPerfil(id, nombre, correo, rut, actual.equipo) }.fold(
+            runCatching {
+                sesion.actualizarPerfil(
+                    id = id,
+                    nombre = nombre,
+                    correo = correo,
+                    rut = rut,
+                    direccion = direccion,
+                    equipo = actual.equipo
+                )
+            }.fold(
                 onSuccess = { usuario ->
                     _cuenta.value = actual.copy(
                         nombre = usuario.nombre,
                         correo = usuario.correo,
-                        rut = usuario.rut.orEmpty()
+                        rut = usuario.rut.orEmpty(),
+                        direccion = usuario.direccion
                     )
                     onListo(null)
                 },
@@ -126,7 +138,14 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
         val correo = correoCorporativo(nombre)
         viewModelScope.launch {
             runCatching {
-                sesion.registrar(nombre, correo, CLAVE_INICIAL, "", equipo.name, ROL_LIQUIDADOR)
+                sesion.registrar(
+                    nombre = nombre,
+                    correo = correo,
+                    contrasena = CLAVE_INICIAL,
+                    rut = "",
+                    equipo = equipo.name,
+                    rolId = ROL_LIQUIDADOR
+                )
             }.fold(
                 onSuccess = {
                     cargarUsuarios()
@@ -138,6 +157,7 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
     }
 
     fun cerrarSesion() {
+        SesionToken.limpiar()
         _cuenta.value = null
         _usuarios.value = emptyList()
     }
@@ -154,6 +174,7 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
             else -> RolCuenta.ASEGURADO
         },
         equipo = usuario.equipo,
+        direccion = usuario.direccion,
         avatarUrl = usuario.avatarUrl
     )
 

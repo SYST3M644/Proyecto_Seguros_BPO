@@ -43,6 +43,10 @@ class ArchivoRepository(
         )
     }
 
+    suspend fun descargarEvidencia(evidenciaId: String): ByteArray = llamar {
+        evidenciaApi.descargar(evidenciaId).bytes()
+    }
+
     suspend fun eliminarEvidencia(evidenciaId: String) = llamar {
         evidenciaApi.eliminar(evidenciaId)
     }

@@ -61,6 +61,7 @@ import cl.duocuc.segurosbpo.ui.screens.EditarSiniestroScreen
 import cl.duocuc.segurosbpo.ui.screens.MisSiniestrosScreen
 import cl.duocuc.segurosbpo.ui.screens.EditarPerfilScreen
 import cl.duocuc.segurosbpo.ui.screens.PerfilCuentaScreen
+import cl.duocuc.segurosbpo.data.VistaPreviaArchivo
 import cl.duocuc.segurosbpo.model.RolCuenta
 import cl.duocuc.segurosbpo.model.comoAsegurado
 import cl.duocuc.segurosbpo.ui.theme.PrimarioClaro
@@ -125,6 +126,13 @@ private fun BarraInferior(
                     onClick = { onNavegar(Ruta.Disponibles.ruta) }
                 )
                 OpcionInferior(
+                    texto = "Avisos",
+                    icono = R.drawable.ic_avisos,
+                    seleccionada = rutaActual == Ruta.Avisos.ruta,
+                    cantidad = cantidadAvisos,
+                    onClick = { onNavegar(Ruta.Avisos.ruta) }
+                )
+                OpcionInferior(
                     texto = "Estadísticas",
                     icono = R.drawable.ic_estadisticas,
                     seleccionada = rutaActual == Ruta.EstadisticasLiquidador.ruta,
@@ -152,10 +160,11 @@ private fun BarraInferior(
                     onClick = { onNavegar(Ruta.Catalogo.ruta) }
                 )
                 OpcionInferior(
-                    texto = "Carga",
-                    icono = R.drawable.ic_estadisticas,
-                    seleccionada = rutaActual == Ruta.CargaEquipos.ruta,
-                    onClick = { onNavegar(Ruta.CargaEquipos.ruta) }
+                    texto = "Avisos",
+                    icono = R.drawable.ic_avisos,
+                    seleccionada = rutaActual == Ruta.Avisos.ruta,
+                    cantidad = cantidadAvisos,
+                    onClick = { onNavegar(Ruta.Avisos.ruta) }
                 )
             }
         }
@@ -181,6 +190,21 @@ private fun BarraInferior(
                             onPerfil()
                         }
                     )
+                    if (rol == RolCuenta.ANALISTA) {
+                        DropdownMenuItem(
+                            text = { Text("Carga de equipos") },
+                            leadingIcon = {
+                                Icon(
+                                    painterResource(R.drawable.ic_estadisticas),
+                                    contentDescription = null
+                                )
+                            },
+                            onClick = {
+                                menuAbierto = false
+                                onNavegar(Ruta.CargaEquipos.ruta)
+                            }
+                        )
+                    }
                     DropdownMenuItem(
                         text = { Text("Cerrar sesión") },
                         leadingIcon = {
@@ -278,8 +302,10 @@ fun AppNavegacion(
     val navController = rememberNavController()
     val siniestrosVm: SiniestrosViewModel = viewModel()
     val casos by siniestrosVm.siniestros.collectAsStateWithLifecycle()
+    val cargando by siniestrosVm.cargando.collectAsStateWithLifecycle()
     val avisos by siniestrosVm.avisos.collectAsStateWithLifecycle()
     val avisosSinLeer by siniestrosVm.sinLeer.collectAsStateWithLifecycle()
+    val pendientes by siniestrosVm.pendientes.collectAsStateWithLifecycle()
     val consultas by siniestrosVm.consultas.collectAsStateWithLifecycle()
     val contexto = LocalContext.current
     var busqueda by rememberSaveable { mutableStateOf("") }
@@ -309,6 +335,7 @@ fun AppNavegacion(
 
     LaunchedEffect(usuarioId) {
         if (usuarioId.isNotBlank()) siniestrosVm.cargarAvisos(usuarioId)
+        if (sesion.rol == RolCuenta.ANALISTA) siniestrosVm.cargarPendientes()
     }
 
     val rutaActual = navController.currentBackStackEntryAsState().value?.destination?.route
@@ -347,12 +374,52 @@ fun AppNavegacion(
                         viewModel = siniestrosVm
                     )
                 }
+                composable(Ruta.Avisos.ruta) {
+                    AvisosScreen(
+                        avisos = avisos,
+                        onCargar = {
+                            siniestrosVm.cargarAvisos(usuarioId)
+                            if (sesion.rol == RolCuenta.ANALISTA) {
+                                siniestrosVm.cargarPendientes()
+                            }
+                        },
+                        onMarcarLeido = { siniestrosVm.marcarAvisoLeido(it, usuarioId) },
+                        onAbrirCaso = {
+                            when (sesion.rol) {
+                                RolCuenta.ASEGURADO ->
+                                    navController.navigate(Ruta.Detalle.crear(it))
+                                RolCuenta.LIQUIDADOR ->
+                                    navController.navigate(Ruta.Liquidador.ruta)
+                                RolCuenta.ANALISTA ->
+                                    navController.navigate(Ruta.Analista.ruta)
+                            }
+                        },
+                        onAdjuntar = {
+                            if (sesion.rol == RolCuenta.ASEGURADO) {
+                                navController.navigate(Ruta.Evidencias.crear(it))
+                            } else {
+                                navController.navigate(Ruta.Liquidador.ruta)
+                            }
+                        },
+                        onVolver = { navController.navigateUp() },
+                        cargando = cargando,
+                        pendientes = pendientes,
+                        onAprobar = { siniestrosVm.aprobarAsegurado(it) },
+                        onRechazar = { siniestrosVm.rechazarAsegurado(it) }
+                    )
+                }
                 composable(Ruta.EditarPerfil.ruta) {
                     EditarPerfilScreen(
                         cuenta = sesion,
-                        onGuardar = { nombre, rut, correo, telefono, listo ->
+                        onGuardar = { nombre, rut, correo, telefono, direccion, listo ->
                             cuentaVm.actualizarContacto(correo, telefono)
-                            cuentaVm.guardarPerfilEnServidor(nombre, correo, rut, listo)
+                            cuentaVm.guardarPerfilEnServidor(
+                                nombre = nombre,
+                                correo = correo,
+                                rut = rut,
+                                direccion = direccion,
+                                onListo = listo
+                            )
                         },
                         onCambiarContrasena = cuentaVm::cambiarContrasena,
                         onVolver = { navController.navigateUp() }
@@ -413,22 +480,14 @@ fun AppNavegacion(
                             busqueda = busqueda,
                             onBuscar = { busqueda = it },
                             onVerDetalle = { navController.navigate(Ruta.Detalle.crear(it)) },
-                            onNuevoReporte = { navController.navigate(Ruta.Reportar.ruta) }
+                            onNuevoReporte = { navController.navigate(Ruta.Reportar.ruta) },
+                            cargando = cargando,
+                            onActualizar = { siniestrosVm.cargarDeAsegurado(usuarioId) }
                         )
                     }
                     composable(Ruta.Estadisticas.ruta) {
                         EstadisticasAseguradoScreen(
                             siniestros = casos,
-                            onVolver = { navController.navigateUp() }
-                        )
-                    }
-                    composable(Ruta.Avisos.ruta) {
-                        AvisosScreen(
-                            avisos = avisos,
-                            onCargar = { siniestrosVm.cargarAvisos(usuarioId) },
-                            onMarcarLeido = { siniestrosVm.marcarAvisoLeido(it, usuarioId) },
-                            onAbrirCaso = { navController.navigate(Ruta.Detalle.crear(it)) },
-                            onAdjuntar = { navController.navigate(Ruta.Evidencias.crear(it)) },
                             onVolver = { navController.navigateUp() }
                         )
                     }
@@ -525,8 +584,16 @@ fun AppNavegacion(
                                 siniestrosVm.cargarEvidencias(id)
                                 siniestrosVm.cargarSolicitudes(id)
                             },
-                            onCargarImagen = { null },
-                            onCargarMiniatura = { null },
+                            onCargarImagen = { evidenciaId ->
+                                siniestrosVm.vistaPreviaEvidencia(
+                                    evidenciaId, VistaPreviaArchivo.LADO_COMPLETO
+                                )
+                            },
+                            onCargarMiniatura = { evidenciaId ->
+                                siniestrosVm.vistaPreviaEvidencia(
+                                    evidenciaId, VistaPreviaArchivo.LADO_MINIATURA
+                                )
+                            },
                             onGuardarFoto = { tipo, bitmap ->
                                 siniestrosVm.subirFoto(id, tipo, sesion.nombre, bitmap)
                                 null
@@ -571,7 +638,9 @@ fun AppNavegacion(
                         DisponiblesLiquidadorScreen(
                             equipo = sesion.equipo.orEmpty(),
                             disponibles = disponibles,
-                            onTomarCaso = { casoId -> siniestrosVm.tomarCaso(casoId, usuarioId) }
+                            onTomarCaso = { casoId -> siniestrosVm.tomarCaso(casoId, usuarioId) },
+                            cargando = cargando,
+                            onActualizar = { siniestrosVm.cargarDisponibles(usuarioId) }
                         )
                     }
                     composable(Ruta.EstadisticasLiquidador.ruta) {
@@ -588,7 +657,7 @@ fun AppNavegacion(
             BarraInferior(
                 rol = sesion.rol,
                 rutaActual = rutaActual,
-                cantidadAvisos = avisosSinLeer.toInt(),
+                cantidadAvisos = avisosSinLeer.toInt() + pendientes.size,
                 cantidadDisponibles = disponibles.size,
                 cantidadPorAsignar = casos.size,
                 onNavegar = { ruta ->

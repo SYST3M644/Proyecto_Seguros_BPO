@@ -12,11 +12,20 @@ interface UsuarioApi {
     @GET("api/usuarios")
     suspend fun listar(@Query("buscar") buscar: String? = null): List<UsuarioResponse>
 
+    @GET("api/usuarios/pendientes")
+    suspend fun pendientes(): List<UsuarioResponse>
+
+    @PUT("api/usuarios/{id}/aprobar")
+    suspend fun aprobar(@Path("id") id: String): UsuarioResponse
+
+    @PUT("api/usuarios/{id}/rechazar")
+    suspend fun rechazar(@Path("id") id: String): UsuarioResponse
+
     @GET("api/usuarios/{id}")
     suspend fun obtener(@Path("id") id: String): UsuarioResponse
 
     @POST("api/usuarios/login")
-    suspend fun iniciarSesion(@Body datos: LoginRequest): UsuarioResponse
+    suspend fun iniciarSesion(@Body datos: LoginRequest): LoginResponse
 
     @POST("api/usuarios")
     suspend fun registrar(@Body datos: RegistroRequest): UsuarioResponse

@@ -1,6 +1,8 @@
 package cl.duocuc.segurosbpo.ui.screens
 
 import android.content.Intent
+import android.graphics.Bitmap
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +13,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -19,8 +22,12 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,12 +38,18 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cl.duocuc.segurosbpo.R
+import cl.duocuc.segurosbpo.data.VistaPreviaArchivo
+import cl.duocuc.segurosbpo.model.OrdenSiniestros
+import cl.duocuc.segurosbpo.model.OrdenSiniestros.CERRADO
 import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
+import cl.duocuc.segurosbpo.ui.components.ActualizarDeslizando
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.BotonPrincipal
 import cl.duocuc.segurosbpo.ui.components.BotonSecundario
@@ -68,12 +81,14 @@ fun CasosLiquidadorScreen(
     val scope = rememberCoroutineScope()
 
     var busqueda by rememberSaveable { mutableStateOf("") }
+    var verCerrados by rememberSaveable { mutableStateOf(false) }
     var abierto by rememberSaveable { mutableStateOf("") }
     var descripcion by rememberSaveable { mutableStateOf("") }
     var visibleAsegurado by rememberSaveable { mutableStateOf(true) }
     var resultado by rememberSaveable { mutableStateOf(RESULTADOS.first()) }
     var mensajeCierre by rememberSaveable { mutableStateOf("") }
     var documentoPedido by rememberSaveable { mutableStateOf("") }
+    var imagenVista by remember { mutableStateOf<Bitmap?>(null) }
 
     val contexto = LocalContext.current
     val abrirArchivo: (String) -> Unit = { url ->
@@ -97,17 +112,26 @@ fun CasosLiquidadorScreen(
 
     val visibles = remember(casos, busqueda) {
         val texto = busqueda.trim().lowercase()
-        if (texto.isEmpty()) casos
+        val encontrados = if (texto.isEmpty()) casos
         else casos.filter { caso ->
             listOfNotNull(caso.numero, caso.tipoNombre, caso.comuna, caso.aseguradoNombre)
                 .any { it.lowercase().contains(texto) }
         }
+        OrdenSiniestros.paraLiquidador(encontrados)
     }
+
+    val abiertos = remember(visibles) { visibles.filter { it.etapa != CERRADO } }
+    val cerrados = remember(visibles) { visibles.filter { it.etapa == CERRADO } }
+    val mostrados = if (verCerrados) cerrados else abiertos
 
     Scaffold(
         topBar = { BarraSuperior(stringResource(R.string.titulo_casos_liquidador)) }
     ) { margen ->
-        Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
+        ActualizarDeslizando(
+            cargando = cargando,
+            onActualizar = { viewModel.cargarDeLiquidador(liquidadorId) },
+            modifier = Modifier.fillMaxSize().padding(margen).imePadding()
+        ) {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                     .padding(Dimens.espacioMedio),
@@ -137,11 +161,44 @@ fun CasosLiquidadorScreen(
 
                 BuscadorCasos(busqueda) { busqueda = it }
 
-                if (!cargando && error == null && visibles.isEmpty()) {
-                    Text(stringResource(R.string.vacio_casos_liquidador))
+                if (visibles.isNotEmpty()) {
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                        SegmentedButton(
+                            selected = !verCerrados,
+                            onClick = {
+                                verCerrados = false
+                                abierto = ""
+                            },
+                            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                        ) {
+                            Text(stringResource(R.string.tab_casos_abiertos, abiertos.size))
+                        }
+                        SegmentedButton(
+                            selected = verCerrados,
+                            onClick = {
+                                verCerrados = true
+                                abierto = ""
+                            },
+                            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                        ) {
+                            Text(stringResource(R.string.tab_casos_cerrados, cerrados.size))
+                        }
+                    }
                 }
 
-                visibles.forEach { caso ->
+                if (!cargando && error == null && mostrados.isEmpty()) {
+                    Text(
+                        stringResource(
+                            when {
+                                visibles.isEmpty() -> R.string.vacio_casos_liquidador
+                                verCerrados -> R.string.vacio_casos_cerrados
+                                else -> R.string.vacio_casos_abiertos
+                            }
+                        )
+                    )
+                }
+
+                mostrados.forEach { caso ->
                     Card(Modifier.fillMaxWidth()) {
                         Column(
                             Modifier.padding(Dimens.espacioMedio),
@@ -160,10 +217,12 @@ fun CasosLiquidadorScreen(
                             EtiquetaInteres(texto = etiquetaDeEtapa(caso.etapa))
 
                             BotonSecundario(
-                                texto = if (abierto == caso.id) {
-                                    stringResource(R.string.btn_cerrar_gestion)
-                                } else {
-                                    stringResource(R.string.btn_gestionar_caso)
+                                texto = when {
+                                    abierto == caso.id ->
+                                        stringResource(R.string.btn_cerrar_gestion)
+                                    caso.etapa == CERRADO ->
+                                        stringResource(R.string.btn_ver_archivado)
+                                    else -> stringResource(R.string.btn_gestionar_caso)
                                 },
                                 onClick = {
                                     abierto = if (abierto == caso.id) "" else caso.id
@@ -204,32 +263,34 @@ fun CasosLiquidadorScreen(
 
                                 HorizontalDivider()
 
-                                OutlinedTextField(
-                                    value = descripcion,
-                                    onValueChange = { descripcion = it },
-                                    label = {
-                                        Text(stringResource(R.string.campo_gestion))
-                                    },
-                                    minLines = 2,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Checkbox(
-                                        checked = visibleAsegurado,
-                                        onCheckedChange = { visibleAsegurado = it }
+                                if (caso.etapa != CERRADO) {
+                                    OutlinedTextField(
+                                        value = descripcion,
+                                        onValueChange = { descripcion = it },
+                                        label = {
+                                            Text(stringResource(R.string.campo_gestion))
+                                        },
+                                        minLines = 2,
+                                        modifier = Modifier.fillMaxWidth()
                                     )
-                                    Text(stringResource(R.string.opcion_visible_asegurado))
-                                }
-                                BotonSecundario(
-                                    texto = stringResource(R.string.btn_registrar_gestion),
-                                    onClick = {
-                                        viewModel.agregarGestion(
-                                            caso.id, responsable, descripcion, visibleAsegurado
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Checkbox(
+                                            checked = visibleAsegurado,
+                                            onCheckedChange = { visibleAsegurado = it }
                                         )
-                                        descripcion = ""
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
+                                        Text(stringResource(R.string.opcion_visible_asegurado))
+                                    }
+                                    BotonSecundario(
+                                        texto = stringResource(R.string.btn_registrar_gestion),
+                                        onClick = {
+                                            viewModel.agregarGestion(
+                                                caso.id, responsable, descripcion, visibleAsegurado
+                                            )
+                                            descripcion = ""
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
 
                                 HorizontalDivider()
 
@@ -244,33 +305,35 @@ fun CasosLiquidadorScreen(
                                     )
                                 }
                                 evidencias.forEach { evidencia ->
-                                    Row(
-                                        Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement =
-                                            Arrangement.spacedBy(Dimens.espacioChico)
-                                    ) {
-                                        Column(Modifier.weight(1f)) {
-                                            Text(
-                                                evidencia.tipoDocumento,
-                                                style = MaterialTheme.typography.bodyMedium
+                                    FilaDocumento(
+                                        tipo = evidencia.tipoDocumento,
+                                        nombre = evidencia.nombreArchivo + " · " +
+                                            (evidencia.tamanoBytes / 1024) + " KB",
+                                        detalle = evidencia.fechaRegistro + " · " +
+                                            evidencia.subidoPor,
+                                        esImagen = previsualizable(evidencia.mime),
+                                        cargarMiniatura = {
+                                            viewModel.vistaPreviaEvidencia(
+                                                evidencia.id,
+                                                VistaPreviaArchivo.LADO_MINIATURA
                                             )
-                                            Text(
-                                                evidencia.nombreArchivo + " · " +
-                                                    (evidencia.tamanoBytes / 1024) + " KB",
-                                                style = MaterialTheme.typography.bodySmall
-                                            )
-                                            Text(
-                                                evidencia.fechaRegistro + " · " +
-                                                    evidencia.subidoPor,
-                                                style = MaterialTheme.typography.labelSmall
-                                            )
-                                        }
-                                        BotonSecundario(
-                                            texto = stringResource(R.string.btn_abrir),
-                                            onClick = { abrirArchivo(evidencia.archivoUrl) }
-                                        )
-                                    }
+                                        },
+                                        onAbrir = {
+                                            scope.launch {
+                                                val vista = viewModel.vistaPreviaEvidencia(
+                                                    evidencia.id,
+                                                    VistaPreviaArchivo.LADO_COMPLETO
+                                                )
+                                                if (vista == null) {
+                                                    abrirArchivo(evidencia.archivoUrl)
+                                                } else {
+                                                    imagenVista = vista
+                                                }
+                                            }
+                                        },
+                                        onDescargar = { abrirArchivo(evidencia.archivoUrl) },
+                                        onEliminar = null
+                                    )
                                 }
 
                                 HorizontalDivider()
@@ -303,25 +366,27 @@ fun CasosLiquidadorScreen(
                                         }
                                     }
                                 }
-                                OutlinedTextField(
-                                    value = documentoPedido,
-                                    onValueChange = { documentoPedido = it },
-                                    label = {
-                                        Text(stringResource(R.string.campo_documento_pedido))
-                                    },
-                                    singleLine = true,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                                BotonSecundario(
-                                    texto = stringResource(R.string.btn_pedir_documento),
-                                    onClick = {
-                                        viewModel.solicitarDocumento(
-                                            caso.id, documentoPedido, "", responsable
-                                        )
-                                        documentoPedido = ""
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
+                                if (caso.etapa != CERRADO) {
+                                    OutlinedTextField(
+                                        value = documentoPedido,
+                                        onValueChange = { documentoPedido = it },
+                                        label = {
+                                            Text(stringResource(R.string.campo_documento_pedido))
+                                        },
+                                        singleLine = true,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    BotonSecundario(
+                                        texto = stringResource(R.string.btn_pedir_documento),
+                                        onClick = {
+                                            viewModel.solicitarDocumento(
+                                                caso.id, documentoPedido, "", responsable
+                                            )
+                                            documentoPedido = ""
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
 
                                 HorizontalDivider()
 
@@ -343,12 +408,17 @@ fun CasosLiquidadorScreen(
                                     )
                                 }
 
-                                if (caso.etapa != "CERRADO") {
+                                if (caso.etapa != CERRADO) {
                                     BotonPrincipal(
                                         texto = textoAvanzar(caso.etapa),
                                         onClick = {
+                                            val archivando = caso.etapa == "LIQUIDACION"
                                             viewModel.avanzar(caso.id, resultado, mensajeCierre)
-                                            viewModel.cargarDeLiquidador(liquidadorId)
+                                            if (archivando) {
+                                                abierto = ""
+                                                descripcion = ""
+                                                mensajeCierre = ""
+                                            }
                                         },
                                         icono = R.drawable.ic_seguir,
                                         habilitado = caso.etapa != "LIQUIDACION" ||
@@ -361,6 +431,27 @@ fun CasosLiquidadorScreen(
                     }
                 }
             }
+            imagenVista?.let { imagen ->
+                AlertDialog(
+                    onDismissRequest = { imagenVista = null },
+                    confirmButton = {
+                        TextButton(onClick = { imagenVista = null }) {
+                            Text(stringResource(R.string.btn_cerrar))
+                        }
+                    },
+                    text = {
+                        Image(
+                            bitmap = imagen.asImageBitmap(),
+                            contentDescription = stringResource(
+                                R.string.etiqueta_evidencias_recibidas
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+                )
+            }
+
             AvisoSuperior(aviso)
         }
     }
@@ -370,7 +461,7 @@ private fun etiquetaDeEtapa(etapa: String): String = when (etapa) {
     "RECIBIDO" -> "Recibido"
     "EVALUACION" -> "En evaluación"
     "LIQUIDACION" -> "En liquidación"
-    "CERRADO" -> "Cerrado"
+    "CERRADO" -> "Archivado"
     else -> etapa
 }
 

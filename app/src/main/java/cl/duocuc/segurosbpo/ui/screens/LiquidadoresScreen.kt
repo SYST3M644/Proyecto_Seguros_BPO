@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import cl.duocuc.segurosbpo.model.CuentaLocal
 import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.ValidadorContacto
+import cl.duocuc.segurosbpo.model.ValidadorNombre
 import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.AvatarCuenta
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
@@ -55,12 +56,7 @@ fun LiquidadoresScreen(
     var tocado by rememberSaveable { mutableStateOf(false) }
 
     val equipoElegido = Liquidador.entries.first { it.name == equipo }
-    val errorNombre = when {
-        nombre.isBlank() -> "Indica el nombre"
-        nombre.trim().length < 3 -> "El nombre es muy corto"
-        !nombre.trim().contains(' ') -> "Escribe nombre y apellido"
-        else -> null
-    }
+    val errorNombre = ValidadorNombre.error(nombre)
     val errorTelefono = ValidadorContacto.errorTelefono(telefono)
     val puedeCrear = errorNombre == null && errorTelefono == null
 

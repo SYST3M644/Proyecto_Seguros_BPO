@@ -10,6 +10,7 @@ import cl.duocuc.segurosbpo.data.CatalogoRepository
 import cl.duocuc.segurosbpo.data.ProcesadorEvidencia
 import cl.duocuc.segurosbpo.data.SesionRepository
 import cl.duocuc.segurosbpo.data.SiniestroRepository
+import cl.duocuc.segurosbpo.data.VistaPreviaArchivo
 import cl.duocuc.segurosbpo.data.remote.CompaniaResponse
 import cl.duocuc.segurosbpo.data.remote.AvisoResponse
 import cl.duocuc.segurosbpo.data.remote.CargaLiquidadorResponse
@@ -61,6 +62,9 @@ class SiniestrosViewModel(
 
     private val _liquidadores = MutableStateFlow<List<UsuarioResponse>>(emptyList())
     val liquidadores = _liquidadores.asStateFlow()
+
+    private val _pendientes = MutableStateFlow<List<UsuarioResponse>>(emptyList())
+    val pendientes = _pendientes.asStateFlow()
 
     private val _avisos = MutableStateFlow<List<AvisoResponse>>(emptyList())
     val avisos = _avisos.asStateFlow()
@@ -327,7 +331,31 @@ class SiniestrosViewModel(
             _siniestros.value = _siniestros.value.map {
                 if (it.id == actualizado.id) actualizado else it
             }
-            _aviso.value = "El caso avanzó a " + actualizado.etapa.lowercase()
+            _aviso.value = if (actualizado.etapa == "CERRADO") {
+                "Caso archivado"
+            } else {
+                "El caso avanzó a " + actualizado.etapa.lowercase()
+            }
+        }
+    }
+
+    fun cargarPendientes() {
+        ejecutar { _pendientes.value = sesion.listarPendientes() }
+    }
+
+    fun aprobarAsegurado(id: String) {
+        ejecutar {
+            val aprobado = sesion.aprobarAsegurado(id)
+            _pendientes.value = _pendientes.value.filterNot { it.id == aprobado.id }
+            _aviso.value = aprobado.nombre + " ya puede entrar"
+        }
+    }
+
+    fun rechazarAsegurado(id: String) {
+        ejecutar {
+            val rechazado = sesion.rechazarAsegurado(id)
+            _pendientes.value = _pendientes.value.filterNot { it.id == rechazado.id }
+            _aviso.value = "Cuenta de " + rechazado.nombre + " rechazada"
         }
     }
 
@@ -367,6 +395,17 @@ class SiniestrosViewModel(
             _evidencias.value = archivos.listarEvidencias(siniestroId)
             _aviso.value = "Documento enviado al servidor"
         }
+    }
+
+    suspend fun vistaPreviaEvidencia(evidenciaId: String, lado: Int): Bitmap? {
+        val evidencia = _evidencias.value.firstOrNull { it.id == evidenciaId } ?: return null
+        return runCatching {
+            VistaPreviaArchivo.decodificar(
+                archivos.descargarEvidencia(evidenciaId),
+                evidencia.mime,
+                lado
+            )
+        }.getOrNull()
     }
 
     fun eliminarEvidencia(siniestroId: String, evidenciaId: String) {

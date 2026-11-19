@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import cl.duocuc.segurosbpo.data.remote.SiniestroResponse
 import cl.duocuc.segurosbpo.model.coincideCon
 import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
+import cl.duocuc.segurosbpo.ui.components.ActualizarDeslizando
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.BuscadorCasos
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
@@ -41,7 +42,9 @@ import androidx.compose.ui.tooling.preview.Preview
 fun DisponiblesLiquidadorScreen(
     equipo: String,
     disponibles: List<SiniestroResponse>,
-    onTomarCaso: (String) -> Unit
+    onTomarCaso: (String) -> Unit,
+    cargando: Boolean = false,
+    onActualizar: () -> Unit = {}
 ) {
     val aviso = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -50,7 +53,11 @@ fun DisponiblesLiquidadorScreen(
     Scaffold(
         topBar = { BarraSuperior("Casos disponibles") }
     ) { margen ->
-        Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
+        ActualizarDeslizando(
+            cargando = cargando,
+            onActualizar = { onActualizar() },
+            modifier = Modifier.fillMaxSize().padding(margen).imePadding()
+        ) {
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                 .padding(Dimens.espacioMedio),

@@ -14,6 +14,7 @@ data class CuentaLocal(
     val telefono: String,
     val rol: RolCuenta,
     val equipo: String?,
+    val direccion: String? = null,
     val foto: ByteArray? = null,
     val avatarUrl: String? = null
 )

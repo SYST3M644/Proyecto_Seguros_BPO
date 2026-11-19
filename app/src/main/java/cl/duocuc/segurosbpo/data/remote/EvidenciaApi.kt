@@ -1,6 +1,7 @@
 package cl.duocuc.segurosbpo.data.remote
 
 import okhttp3.MultipartBody
+import okhttp3.ResponseBody
 import okhttp3.RequestBody
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -22,6 +23,9 @@ interface EvidenciaApi {
         @Part("subidoPor") subidoPor: RequestBody,
         @Part archivo: MultipartBody.Part
     ): EvidenciaResponse
+
+    @GET("api/siniestros/evidencias/{evidenciaId}/archivo")
+    suspend fun descargar(@Path("evidenciaId") evidenciaId: String): ResponseBody
 
     @DELETE("api/siniestros/evidencias/{evidenciaId}")
     suspend fun eliminar(@Path("evidenciaId") evidenciaId: String)

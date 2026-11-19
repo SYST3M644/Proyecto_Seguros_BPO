@@ -14,7 +14,8 @@
     <string name="campo_region">Región donde ocurrió</string>
     <string name="etiqueta_evidencias">Evidencias del siniestro</string>
     <string name="ayuda_documentos_pedidos">Para este tipo de siniestro se piden: %1$s</string>
-    <string name="btn_adjuntar_evidencias">Adjuntar fotografías</string>
+    <string name="btn_tomar_foto">Tomar fotografía</string>
+    <string name="btn_elegir_galeria">Elegir de la galería</string>
     <string name="btn_quitar">Quitar</string>
     <string name="vacio_busqueda">Ningún caso coincide con la búsqueda.</string>
     <string name="campo_comuna">Comuna donde ocurrió</string>
@@ -177,6 +178,10 @@
     <string name="aviso_clave_cambiada">Contraseña cambiada. Inicia sesión con la nueva.</string>
     <string name="titulo_casos_liquidador">Mis casos asignados</string>
     <string name="vacio_casos_liquidador">Todavía no tienes casos asignados.</string>
+    <string name="tab_casos_abiertos">Abiertos (%1$d)</string>
+    <string name="tab_casos_cerrados">Cerrados (%1$d)</string>
+    <string name="vacio_casos_abiertos">No hay casos abiertos.</string>
+    <string name="vacio_casos_cerrados">No hay casos cerrados.</string>
     <string name="vacio_historial">Este caso aún no tiene gestiones registradas.</string>
     <string name="etiqueta_historial">Historial del caso</string>
     <string name="campo_gestion">Qué hiciste en el caso</string>
@@ -193,4 +198,17 @@
     <string name="etiqueta_evidencias_recibidas">Documentos recibidos</string>
     <string name="vacio_evidencias">Todavía no hay documentos en este caso.</string>
     <string name="btn_abrir">Abrir</string>
+    <string name="btn_cerrar">Cerrar</string>
+    <string name="btn_ver_archivado">Ver caso archivado</string>
+    <string name="titulo_asegurados_pendientes">Asegurados por aprobar</string>
+    <string name="ayuda_asegurados_pendientes">Revisa las cuentas nuevas. El asegurado no puede entrar hasta que apruebes la suya.</string>
+    <string name="btn_aprobar_asegurado">Aprobar</string>
+    <string name="btn_rechazar_asegurado">Rechazar</string>
+    <string name="titulo_cuenta_pendiente">Cuenta creada</string>
+    <string name="ayuda_cuenta_pendiente">Un analista tiene que aprobar tu cuenta antes de que puedas entrar. Te avisaremos cuando esté lista.</string>
+    <string name="btn_entendido">Entendido</string>
+    <string name="campo_direccion">Dirección</string>
+    <string name="pista_elegir_fecha">Toca para elegir la fecha</string>
+    <string name="campo_repetir_contrasena">Repite la contraseña</string>
+    <string name="error_claves_distintas">Las contraseñas no coinciden</string>
 </resources>

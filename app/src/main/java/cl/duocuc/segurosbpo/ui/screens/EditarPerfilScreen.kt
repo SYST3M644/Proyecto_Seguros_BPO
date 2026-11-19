@@ -29,6 +29,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import cl.duocuc.segurosbpo.model.CuentaLocal
 import cl.duocuc.segurosbpo.model.ValidadorContacto
+import cl.duocuc.segurosbpo.model.ValidadorNombre
 import cl.duocuc.segurosbpo.model.ValidadorRut
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.CampoContrasena
@@ -41,7 +42,7 @@ import androidx.compose.ui.tooling.preview.Preview
 @Composable
 fun EditarPerfilScreen(
     cuenta: CuentaLocal,
-    onGuardar: (String, String, String, String, (String?) -> Unit) -> Unit,
+    onGuardar: (String, String, String, String, String, (String?) -> Unit) -> Unit,
     onCambiarContrasena: (String, String, (String?) -> Unit) -> Unit,
     onVolver: () -> Unit
 ) {
@@ -49,6 +50,9 @@ fun EditarPerfilScreen(
     var rut by rememberSaveable(cuenta.id) { mutableStateOf(cuenta.rut) }
     var correo by rememberSaveable(cuenta.id) { mutableStateOf(cuenta.correo) }
     var telefono by rememberSaveable(cuenta.id) { mutableStateOf(cuenta.telefono) }
+    var direccion by rememberSaveable(cuenta.id) {
+        mutableStateOf(cuenta.direccion.orEmpty())
+    }
     var tocoNombre by rememberSaveable(cuenta.id) { mutableStateOf(false) }
     var tocoRut by rememberSaveable(cuenta.id) { mutableStateOf(false) }
     var tocoCorreo by rememberSaveable(cuenta.id) { mutableStateOf(false) }
@@ -62,14 +66,15 @@ fun EditarPerfilScreen(
     var claveCambiada by remember { mutableStateOf(false) }
     var clavesVisibles by rememberSaveable(cuenta.id) { mutableStateOf(false) }
 
-    val errorNombre = if (nombre.trim().length < 3) "Escribe tu nombre completo" else null
+    val errorNombre = ValidadorNombre.error(nombre)
     val errorRut = if (rut.isBlank()) null else ValidadorRut.error(rut)
     val errorCorreo = ValidadorContacto.errorCorreo(correo)
     val errorTelefono = ValidadorContacto.errorTelefono(telefono)
     val hayCambios = nombre.trim() != cuenta.nombre ||
         rut.trim() != cuenta.rut ||
         ValidadorContacto.normalizarCorreo(correo) != cuenta.correo ||
-        ValidadorContacto.normalizarTelefono(telefono) != cuenta.telefono
+        ValidadorContacto.normalizarTelefono(telefono) != cuenta.telefono ||
+        direccion.trim() != cuenta.direccion.orEmpty()
     val puedeGuardar = hayCambios && errorNombre == null && errorRut == null &&
         errorCorreo == null && errorTelefono == null
     val puedeCambiarClave = actual.isNotBlank() && nueva.length >= 6
@@ -160,6 +165,15 @@ fun EditarPerfilScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            OutlinedTextField(
+                value = direccion,
+                onValueChange = { direccion = it },
+                label = { Text("Dirección") },
+                singleLine = true,
+                supportingText = { Text("Calle, número y comuna") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(Dimens.espacioJusto)
@@ -172,6 +186,7 @@ fun EditarPerfilScreen(
                         rut = cuenta.rut
                         correo = cuenta.correo
                         telefono = cuenta.telefono
+                        direccion = cuenta.direccion.orEmpty()
                         tocoNombre = false
                         tocoRut = false
                         tocoCorreo = false
@@ -184,7 +199,7 @@ fun EditarPerfilScreen(
                     modifier = Modifier.weight(1f),
                     enabled = puedeGuardar,
                     onClick = {
-                        onGuardar(nombre, rut, correo, telefono) { error ->
+                        onGuardar(nombre, rut, correo, telefono, direccion) { error ->
                             guardado = error == null
                             mensaje = error ?: "Datos actualizados"
                         }
@@ -269,7 +284,7 @@ internal fun EditarPerfilScreenPreview() {
     SegurosBpoTheme {
         EditarPerfilScreen(
             cuenta = Muestras.asegurada,
-            onGuardar = { _, _, _, _, listo -> listo(null) },
+            onGuardar = { _, _, _, _, _, listo -> listo(null) },
             onCambiarContrasena = { _, _, listo -> listo(null) },
             onVolver = {}
         )
