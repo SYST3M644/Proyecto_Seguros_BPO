@@ -37,6 +37,7 @@ import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.BotonPrincipal
+import cl.duocuc.segurosbpo.ui.components.LocalAccionesBarra
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.viewmodel.SiniestrosRemotosViewModel
 import java.text.SimpleDateFormat
@@ -70,10 +71,15 @@ fun ReportarRemotoScreen(
     val puedeEnviar = companiaCodigo.isNotBlank() && tipoCodigo.isNotBlank() &&
         fecha.isNotBlank() && comuna.isNotBlank() && descripcion.isNotBlank() && !cargando
 
+    val temaOscuro = LocalAccionesBarra.current.temaOscuro
+
     val abrirFecha = {
         val calendario = Calendar.getInstance()
+        val formato = SimpleDateFormat("dd-MM-yyyy", Locale.ROOT).apply { isLenient = false }
+        runCatching { formato.parse(fecha) }.getOrNull()?.let { calendario.time = it }
         DatePickerDialog(
             contexto,
+            if (temaOscuro) R.style.SelectorFechaRuedaOscuro else R.style.SelectorFechaRueda,
             { _, anio, mes, dia ->
                 fecha = String.format(Locale.ROOT, "%02d-%02d-%04d", dia, mes + 1, anio)
             },
