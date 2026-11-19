@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.RowScope
@@ -20,7 +22,9 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.annotation.DrawableRes
 import cl.duocuc.segurosbpo.R
@@ -36,50 +40,34 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import cl.duocuc.segurosbpo.ui.screens.LoginScreen
-import cl.duocuc.segurosbpo.ui.screens.AsignarRemotoScreen
-import cl.duocuc.segurosbpo.ui.screens.ReportarRemotoScreen
-import cl.duocuc.segurosbpo.ui.screens.SiniestrosRemotosScreen
 import cl.duocuc.segurosbpo.ui.screens.AsignacionCasosScreen
+import cl.duocuc.segurosbpo.ui.screens.RecuperarContrasenaScreen
+import cl.duocuc.segurosbpo.ui.screens.FormularioScreen
+import cl.duocuc.segurosbpo.ui.screens.SiniestrosScreen
 import cl.duocuc.segurosbpo.ui.screens.AvisosScreen
 import cl.duocuc.segurosbpo.ui.screens.CargaEquiposScreen
 import cl.duocuc.segurosbpo.ui.screens.CatalogoScreen
+import cl.duocuc.segurosbpo.ui.screens.CrearCuentaScreen
 import cl.duocuc.segurosbpo.ui.screens.LiquidadoresScreen
 import cl.duocuc.segurosbpo.ui.screens.ConsultasScreen
 import cl.duocuc.segurosbpo.ui.screens.EstadisticasAseguradoScreen
 import cl.duocuc.segurosbpo.ui.screens.CasosLiquidadorScreen
 import cl.duocuc.segurosbpo.ui.screens.DisponiblesLiquidadorScreen
-import cl.duocuc.segurosbpo.ui.screens.DocumentosLiquidadorScreen
 import cl.duocuc.segurosbpo.ui.screens.EstadisticasLiquidadorScreen
-import cl.duocuc.segurosbpo.ui.screens.GestionCasoScreen
 import cl.duocuc.segurosbpo.ui.screens.DetalleSiniestroScreen
 import cl.duocuc.segurosbpo.ui.screens.EvidenciasScreen
 import cl.duocuc.segurosbpo.ui.screens.HistorialSiniestroScreen
 import cl.duocuc.segurosbpo.ui.screens.EditarSiniestroScreen
-import cl.duocuc.segurosbpo.ui.screens.FormularioScreen
 import cl.duocuc.segurosbpo.ui.screens.MisSiniestrosScreen
 import cl.duocuc.segurosbpo.ui.screens.EditarPerfilScreen
 import cl.duocuc.segurosbpo.ui.screens.PerfilCuentaScreen
 import cl.duocuc.segurosbpo.model.RolCuenta
-import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.comoAsegurado
+import cl.duocuc.segurosbpo.ui.theme.PrimarioClaro
 import cl.duocuc.segurosbpo.viewmodel.CuentaSesionViewModel
-import cl.duocuc.segurosbpo.viewmodel.SiniestrosRemotosViewModel
 import cl.duocuc.segurosbpo.viewmodel.SiniestrosViewModel
 
-fun idDesdeArgumentos(argumentos: Bundle?): Long = argumentos?.getLong("id") ?: 0L
-
-fun contarAvisosNoLeidos(avisos: List<cl.duocuc.segurosbpo.model.AvisoSiniestro>): Int =
-    avisos.count { !it.leido }
-
-fun actualizarDescripcionYRegresar(
-    actualizar: (Long, String) -> Boolean,
-    id: Long,
-    descripcion: String,
-    regresar: () -> Unit
-) {
-    if (actualizar(id, descripcion)) regresar()
-}
-
+fun idDesdeArgumentos(argumentos: Bundle?): String = argumentos?.getString("id").orEmpty()
 @Composable
 private fun BarraInferior(
     rol: RolCuenta,
@@ -89,7 +77,7 @@ private fun BarraInferior(
     cantidadPorAsignar: Int,
     onNavegar: (String) -> Unit,
     onPerfil: () -> Unit,
-    onSiniestrosApi: () -> Unit,
+    onVerSiniestros: () -> Unit,
     onCambiarUsuario: () -> Unit
 ) {
     var menuAbierto by remember { mutableStateOf(false) }
@@ -194,20 +182,7 @@ private fun BarraInferior(
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Casos en el servidor") },
-                        leadingIcon = {
-                            Icon(
-                                painterResource(R.drawable.ic_estadisticas),
-                                contentDescription = null
-                            )
-                        },
-                        onClick = {
-                            menuAbierto = false
-                            onSiniestrosApi()
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Cambiar de usuario") },
+                        text = { Text("Cerrar sesión") },
                         leadingIcon = {
                             Icon(
                                 painterResource(R.drawable.ic_cambiar_usuario),
@@ -237,6 +212,12 @@ private fun RowScope.OpcionInferior(
     NavigationBarItem(
         selected = seleccionada,
         onClick = onClick,
+        colors = NavigationBarItemDefaults.colors(
+            selectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            selectedTextColor = PrimarioClaro,
+            unselectedIconColor = PrimarioClaro,
+            unselectedTextColor = PrimarioClaro
+        ),
         icon = {
             if (cantidad > 0) {
                 BadgedBox(badge = { Badge { Text(cantidad.toString()) } }) {
@@ -266,6 +247,7 @@ fun AppNavegacion(
     val cuentaVm: CuentaSesionViewModel = viewModel()
     val sesion = cuentaVm.cuenta.collectAsStateWithLifecycle().value
     val usuarios = cuentaVm.usuarios.collectAsStateWithLifecycle().value
+    var pantallaSesion by rememberSaveable { mutableStateOf("login") }
     if (sesion == null) {
         CompositionLocalProvider(
             LocalAccionesBarra provides AccionesBarra(
@@ -273,67 +255,62 @@ fun AppNavegacion(
                 onAlternarTema = onAlternarTema
             )
         ) {
-            LoginScreen(onSesionIniciada = cuentaVm::iniciarSesionRemota)
+            when (pantallaSesion) {
+                "crear" -> CrearCuentaScreen(
+                    onCuentaCreada = { pantallaSesion = "login" },
+                    onVolver = { pantallaSesion = "login" }
+                )
+
+                "recuperar" -> RecuperarContrasenaScreen(
+                    onListo = { pantallaSesion = "login" },
+                    onVolver = { pantallaSesion = "login" }
+                )
+
+                else -> LoginScreen(
+                    onSesionIniciada = cuentaVm::iniciarSesionRemota,
+                    onCrearCuenta = { pantallaSesion = "crear" },
+                    onOlvideContrasena = { pantallaSesion = "recuperar" }
+                )
+            }
         }
         return
     }
     val navController = rememberNavController()
     val siniestrosVm: SiniestrosViewModel = viewModel()
-    val remotosVm: SiniestrosRemotosViewModel = viewModel()
-    val asegurado by siniestrosVm.asegurado.collectAsStateWithLifecycle()
-    val siniestros by siniestrosVm.siniestros.collectAsStateWithLifecycle()
-    val estadisticasAsegurado by siniestrosVm.estadisticasAsegurado.collectAsStateWithLifecycle()
-    val busqueda by siniestrosVm.busqueda.collectAsStateWithLifecycle()
-    val evidencias by siniestrosVm.evidencias.collectAsStateWithLifecycle()
-    val solicitudes by siniestrosVm.solicitudes.collectAsStateWithLifecycle()
-    val solicitudesLiquidador by siniestrosVm.solicitudesLiquidador.collectAsStateWithLifecycle()
+    val casos by siniestrosVm.siniestros.collectAsStateWithLifecycle()
     val avisos by siniestrosVm.avisos.collectAsStateWithLifecycle()
-    val gestiones by siniestrosVm.gestiones.collectAsStateWithLifecycle()
-    val liquidador by siniestrosVm.liquidador.collectAsStateWithLifecycle()
-    val casosLiquidador by siniestrosVm.casosLiquidador.collectAsStateWithLifecycle()
-    val seguimientosVencidos by siniestrosVm.seguimientosVencidos.collectAsStateWithLifecycle()
-    val disponiblesLiquidador by siniestrosVm.disponiblesLiquidador.collectAsStateWithLifecycle()
-    val gestionesLiquidador by siniestrosVm.gestionesLiquidador.collectAsStateWithLifecycle()
-    val evidenciasLiquidador by siniestrosVm.evidenciasLiquidador.collectAsStateWithLifecycle()
+    val avisosSinLeer by siniestrosVm.sinLeer.collectAsStateWithLifecycle()
     val consultas by siniestrosVm.consultas.collectAsStateWithLifecycle()
-    val consultasLiquidador by siniestrosVm.consultasLiquidador.collectAsStateWithLifecycle()
+    val contexto = LocalContext.current
+    var busqueda by rememberSaveable { mutableStateOf("") }
+    val solicitudes by siniestrosVm.solicitudes.collectAsStateWithLifecycle()
+    val evidencias by siniestrosVm.evidencias.collectAsStateWithLifecycle()
+    val gestiones by siniestrosVm.gestiones.collectAsStateWithLifecycle()
     val evaluacion by siniestrosVm.evaluacion.collectAsStateWithLifecycle()
-    val sinAsignar by siniestrosVm.sinAsignar.collectAsStateWithLifecycle()
-    val cargaEquipos by siniestrosVm.cargaEquipos.collectAsStateWithLifecycle()
-    val actualizadoEn by siniestrosVm.actualizadoEn.collectAsStateWithLifecycle()
-    val archivados by siniestrosVm.archivados.collectAsStateWithLifecycle()
-    val novedades by siniestrosVm.novedades.collectAsStateWithLifecycle()
+    val disponibles by siniestrosVm.disponibles.collectAsStateWithLifecycle()
     val companias by siniestrosVm.companias.collectAsStateWithLifecycle()
     val tipos by siniestrosVm.tipos.collectAsStateWithLifecycle()
-    val cargaPersonas by siniestrosVm.cargaPersonas.collectAsStateWithLifecycle()
-
-    val idRemoto = remember(sesion.id) {
-        sesion.id.removePrefix("API_")
-    }
-    val equipoSesion = remember(sesion.id, sesion.equipo) {
-        sesion.equipo?.let { runCatching { Liquidador.valueOf(it) }.getOrNull() }
-    }
-
-    LaunchedEffect(sesion.id) {
-        when (sesion.rol) {
-            RolCuenta.ASEGURADO -> siniestrosVm.seleccionarAsegurado(sesion.comoAsegurado())
-            RolCuenta.LIQUIDADOR -> equipoSesion?.let {
-                siniestrosVm.seleccionarLiquidador(it)
-                siniestrosVm.identificarLiquidador(sesion.id, sesion.nombre)
-            }
-            RolCuenta.ANALISTA -> siniestrosVm.refrescarAnalista()
+    val casosDelServidor = remember(casos, busqueda) {
+        val texto = busqueda.trim().lowercase()
+        if (texto.isEmpty()) casos
+        else casos.filter { caso ->
+            listOfNotNull(caso.numero, caso.tipoNombre, caso.comuna, caso.companiaNombre)
+                .any { it.lowercase().contains(texto) }
         }
     }
+    val carga by siniestrosVm.cargaLiquidadores.collectAsStateWithLifecycle()
+    val cargaDelServidor = remember(carga) {
+        carga.associate { it.liquidadorNombre to it.abiertos }
+    }
 
-    val identidadLista = when (sesion.rol) {
-        RolCuenta.ASEGURADO -> asegurado.name == sesion.id
-        RolCuenta.LIQUIDADOR -> equipoSesion == null || liquidador.name == sesion.equipo
-        RolCuenta.ANALISTA -> true
+    val usuarioId = remember(sesion.id) {
+        sesion.id.removePrefix("API_")
     }
-    if (!identidadLista) {
-        androidx.compose.material3.Text("Preparando la sesión")
-        return
+
+    LaunchedEffect(usuarioId) {
+        if (usuarioId.isNotBlank()) siniestrosVm.cargarAvisos(usuarioId)
     }
+
     val rutaActual = navController.currentBackStackEntryAsState().value?.destination?.route
     val inicio = when (sesion.rol) {
         RolCuenta.ASEGURADO -> Ruta.MisSiniestros.ruta
@@ -363,209 +340,200 @@ fun AppNavegacion(
                         onCerrarSesion = cuentaVm::cerrarSesion
                     )
                 }
-                composable(Ruta.SiniestrosApi.ruta) {
-                    SiniestrosRemotosScreen(
-                        usuarioId = idRemoto,
+                composable(Ruta.Siniestros.ruta) {
+                    SiniestrosScreen(
+                        usuarioId = usuarioId,
                         rol = sesion.rol,
-                        viewModel = remotosVm
+                        viewModel = siniestrosVm
                     )
                 }
                 composable(Ruta.EditarPerfil.ruta) {
                     EditarPerfilScreen(
                         cuenta = sesion,
-                        onGuardar = cuentaVm::actualizarContacto,
+                        onGuardar = { nombre, rut, correo, telefono, listo ->
+                            cuentaVm.actualizarContacto(correo, telefono)
+                            cuentaVm.guardarPerfilEnServidor(nombre, correo, rut, listo)
+                        },
+                        onCambiarContrasena = cuentaVm::cambiarContrasena,
                         onVolver = { navController.navigateUp() }
                     )
                 }
 
                 if (sesion.rol == RolCuenta.ANALISTA) {
                     composable(Ruta.Analista.ruta) {
-                        AsignarRemotoScreen(viewModel = remotosVm)
-                    }
-                    composable(Ruta.AnalistaLocal.ruta) {
-                        AsignacionCasosScreen(
-                            pendientes = sinAsignar,
-                            carga = cargaEquipos,
-                            equipos = Liquidador.entries.associateWith { equipo ->
-                                usuarios.filter {
-                                    it.rol == RolCuenta.LIQUIDADOR && it.equipo == equipo.name
-                                }
-                            },
-                            cargaPersonas = cargaPersonas,
-                            actualizadoEn = actualizadoEn,
-                            onCargar = siniestrosVm::refrescarAnalista,
-                            onAsignar = siniestrosVm::asignarCaso
-                        )
+                        AsignacionCasosScreen(viewModel = siniestrosVm)
                     }
                     composable(Ruta.CargaEquipos.ruta) {
                         CargaEquiposScreen(
-                            carga = cargaEquipos,
-                            pendientes = sinAsignar,
-                            actualizadoEn = actualizadoEn,
-                            onCargar = siniestrosVm::refrescarAnalista
+                            carga = carga,
+                            pendientes = casos,
+                            actualizadoEn = "",
+                            onCargar = {
+                                siniestrosVm.cargarCarga()
+                                siniestrosVm.cargarSinAsignar()
+                            }
                         )
                     }
                     composable(Ruta.Liquidadores.ruta) {
+                        LaunchedEffect(Unit) { siniestrosVm.cargarCarga() }
                         LiquidadoresScreen(
                             liquidadores = usuarios.filter {
                                 it.rol == RolCuenta.LIQUIDADOR
                             },
-                            carga = cargaPersonas,
-                            onCrear = cuentaVm::crearLiquidador
+                            carga = cargaDelServidor,
+                            onCrear = cuentaVm::crearLiquidadorEnServidor
                         )
                     }
                     composable(Ruta.Catalogo.ruta) {
                         CatalogoScreen(
                             companias = companias,
                             tipos = tipos,
-                            onCrearCompania = siniestrosVm::crearCompania,
-                            onCrearTipo = siniestrosVm::crearTipoSiniestro
+                            onCrearCompania = { nombre, plazo ->
+                                siniestrosVm.crearCompania(nombre, plazo)
+                            },
+                            onCrearTipo = { nombre, esVehiculo, documentos ->
+                                siniestrosVm.crearTipo(nombre, esVehiculo, documentos)
+                            }
                         )
                     }
                 }
 
                 if (sesion.rol == RolCuenta.ASEGURADO) {
                     composable(Ruta.MisSiniestros.ruta) {
+                        LaunchedEffect(usuarioId) {
+                            if (usuarioId.isNotBlank()) siniestrosVm.cargarDeAsegurado(usuarioId)
+                        }
                         MisSiniestrosScreen(
-                            asegurado = asegurado,
+                            nombreAsegurado = sesion.nombre,
+                            rutAsegurado = sesion.rut,
                             fotoCuenta = sesion.foto,
                             avatarUrl = sesion.avatarUrl,
-                            actualizadoEn = actualizadoEn,
-                            siniestros = siniestros,
+                            actualizadoEn = "",
+                            siniestros = casosDelServidor,
                             busqueda = busqueda,
-                            onBuscar = siniestrosVm::buscar,
+                            onBuscar = { busqueda = it },
                             onVerDetalle = { navController.navigate(Ruta.Detalle.crear(it)) },
                             onNuevoReporte = { navController.navigate(Ruta.Reportar.ruta) }
                         )
                     }
                     composable(Ruta.Estadisticas.ruta) {
                         EstadisticasAseguradoScreen(
-                            siniestros = estadisticasAsegurado,
+                            siniestros = casos,
                             onVolver = { navController.navigateUp() }
                         )
                     }
                     composable(Ruta.Avisos.ruta) {
                         AvisosScreen(
                             avisos = avisos,
-                            onCargar = siniestrosVm::refrescarAvisos,
-                            onMarcarLeido = siniestrosVm::marcarAvisoLeido,
+                            onCargar = { siniestrosVm.cargarAvisos(usuarioId) },
+                            onMarcarLeido = { siniestrosVm.marcarAvisoLeido(it, usuarioId) },
                             onAbrirCaso = { navController.navigate(Ruta.Detalle.crear(it)) },
                             onAdjuntar = { navController.navigate(Ruta.Evidencias.crear(it)) },
                             onVolver = { navController.navigateUp() }
                         )
                     }
                     composable(Ruta.Reportar.ruta) {
-                        ReportarRemotoScreen(
-                            aseguradoId = idRemoto,
-                            viewModel = remotosVm,
+                        FormularioScreen(
+                            aseguradoId = usuarioId,
+                            viewModel = siniestrosVm,
                             onRegistrado = {
-                                navController.navigate(Ruta.SiniestrosApi.ruta) {
+                                navController.navigate(Ruta.Siniestros.ruta) {
                                     popUpTo(Ruta.MisSiniestros.ruta)
                                     launchSingleTop = true
                                 }
                             }
                         )
                     }
-                    composable(Ruta.ReportarLocal.ruta) {
-                        FormularioScreen(
-                            aseguradoActual = asegurado,
-                            onRegistroExitoso = siniestrosVm::registrar,
-                            onPosibleDuplicado = siniestrosVm::buscarPosibleDuplicado,
-                            onGuardarFoto = { tipo, bitmap ->
-                                siniestrosVm.ultimoRegistrado?.let {
-                                    siniestrosVm.guardarFoto(it, tipo, bitmap)
-                                } ?: "No se pudo identificar el siniestro"
-                            },
-                            onGuardarArchivo = { tipo, uri ->
-                                siniestrosVm.ultimoRegistrado?.let {
-                                    siniestrosVm.guardarArchivo(it, tipo, uri)
-                                } ?: "No se pudo identificar el siniestro"
-                            },
-                            onVolver = { navController.navigateUp() },
-                            onVerMisSiniestros = { yaAdjuntados ->
-                                val nuevo = siniestrosVm.ultimoRegistrado
-                                if (yaAdjuntados || nuevo == null) {
-                                    navController.popBackStack(Ruta.MisSiniestros.ruta, false)
-                                } else {
-                                    navController.navigate(Ruta.Evidencias.crear(nuevo))
-                                }
-                            }
-                        )
-                    }
                     composable(
                         route = Ruta.Detalle.ruta,
-                        arguments = listOf(navArgument("id") { type = NavType.LongType })
+                        arguments = listOf(navArgument("id") { type = NavType.StringType })
                     ) { entrada ->
                         val id = idDesdeArgumentos(entrada.arguments)
+                        val caso = casos.firstOrNull { it.id == id }
                         DetalleSiniestroScreen(
-                            siniestro = siniestrosVm.obtener(id),
+                            siniestro = caso,
                             solicitudes = solicitudes,
-                            consultasPendientes = consultas.count { !it.respondida },
+                            consultasPendientes = consultas.count {
+                                it.respuesta.isNullOrBlank()
+                            },
                             evaluacion = evaluacion,
+                            documentosDelTipo = tipos
+                                .firstOrNull { it.codigo == caso?.tipoCodigo }
+                                ?.documentos.orEmpty(),
                             onCargarSolicitudes = {
-                                siniestrosVm.refrescarEvidencias(id)
-                                siniestrosVm.refrescarConsultas(id)
-                                siniestrosVm.refrescarEvaluacion(id)
+                                siniestrosVm.cargarSolicitudes(id)
+                                siniestrosVm.cargarConsultas(id)
+                                siniestrosVm.cargarEvaluacion(id)
                             },
                             onVolver = { volverDelDetalle(navController) },
                             onEditar = { navController.navigate(Ruta.Editar.crear(id)) },
                             onEvidencias = { navController.navigate(Ruta.Evidencias.crear(id)) },
                             onHistorial = { navController.navigate(Ruta.Historial.crear(id)) },
                             onConsultas = { navController.navigate(Ruta.Consultas.crear(id)) },
-                            onDesistir = { motivo -> siniestrosVm.desistir(id, motivo) },
+                            onDesistir = { motivo ->
+                                siniestrosVm.desistir(id, motivo, usuarioId)
+                            },
                             onGuardarEvaluacion = { nota, comentario ->
-                                siniestrosVm.guardarEvaluacion(id, nota, comentario)
+                                siniestrosVm.evaluar(id, nota, comentario)
                             }
                         )
                     }
                     composable(
                         route = Ruta.Consultas.ruta,
-                        arguments = listOf(navArgument("id") { type = NavType.LongType })
+                        arguments = listOf(navArgument("id") { type = NavType.StringType })
                     ) { entrada ->
                         val id = idDesdeArgumentos(entrada.arguments)
                         ConsultasScreen(
-                            siniestro = siniestrosVm.obtener(id),
+                            siniestro = casos.firstOrNull { it.id == id },
                             consultas = consultas,
-                            onCargar = { siniestrosVm.refrescarConsultas(id) },
-                            onEnviar = { pregunta -> siniestrosVm.enviarConsulta(id, pregunta) },
+                            puedeResponder = sesion.rol == RolCuenta.LIQUIDADOR,
+                            onCargar = { siniestrosVm.cargarConsultas(id) },
+                            onEnviar = { pregunta -> siniestrosVm.preguntar(id, pregunta) },
+                            onResponder = { consultaId, texto ->
+                                siniestrosVm.responderConsulta(consultaId, id, texto)
+                            },
                             onVolver = { navController.navigateUp() }
                         )
                     }
                     composable(
                         route = Ruta.Historial.ruta,
-                        arguments = listOf(navArgument("id") { type = NavType.LongType })
+                        arguments = listOf(navArgument("id") { type = NavType.StringType })
                     ) { entrada ->
                         val id = idDesdeArgumentos(entrada.arguments)
                         HistorialSiniestroScreen(
-                            siniestro = siniestrosVm.obtener(id),
+                            siniestro = casos.firstOrNull { it.id == id },
                             gestiones = gestiones,
-                            onCargar = { siniestrosVm.refrescarGestiones(id) },
+                            onCargar = { siniestrosVm.cargarGestiones(id) },
                             onVolver = { navController.navigateUp() }
                         )
                     }
                     composable(
                         route = Ruta.Evidencias.ruta,
-                        arguments = listOf(navArgument("id") { type = NavType.LongType })
+                        arguments = listOf(navArgument("id") { type = NavType.StringType })
                     ) { entrada ->
                         val id = idDesdeArgumentos(entrada.arguments)
+                        val caso = casos.firstOrNull { it.id == id }
                         EvidenciasScreen(
-                            siniestro = siniestrosVm.obtener(id),
-                            asegurado = asegurado,
+                            siniestro = caso,
+                            documentosDelTipo = tipos
+                                .firstOrNull { it.codigo == caso?.tipoCodigo }
+                                ?.documentos.orEmpty(),
                             evidencias = evidencias,
                             solicitudes = solicitudes,
                             onVolver = { navController.navigateUp() },
-                            onCargar = { siniestrosVm.refrescarEvidencias(id) },
-                            onCargarImagen = { evidenciaId ->
-                                siniestrosVm.cargarImagen(id, evidenciaId)
+                            onCargar = {
+                                siniestrosVm.cargarEvidencias(id)
+                                siniestrosVm.cargarSolicitudes(id)
                             },
-                            onCargarMiniatura = { evidenciaId ->
-                                siniestrosVm.cargarMiniatura(id, evidenciaId)
-                            },
+                            onCargarImagen = { null },
+                            onCargarMiniatura = { null },
                             onGuardarFoto = { tipo, bitmap ->
-                                siniestrosVm.guardarFoto(id, tipo, bitmap)
+                                siniestrosVm.subirFoto(id, tipo, sesion.nombre, bitmap)
+                                null
                             },
                             onGuardarArchivo = { tipo, uri ->
-                                siniestrosVm.guardarArchivo(id, tipo, uri)
+                                siniestrosVm.subirArchivo(contexto, id, tipo, sesion.nombre, uri)
+                                null
                             },
                             onEliminar = { evidenciaId ->
                                 siniestrosVm.eliminarEvidencia(id, evidenciaId)
@@ -574,20 +542,15 @@ fun AppNavegacion(
                     }
                     composable(
                         route = Ruta.Editar.ruta,
-                        arguments = listOf(navArgument("id") { type = NavType.LongType })
+                        arguments = listOf(navArgument("id") { type = NavType.StringType })
                     ) { entrada ->
                         val id = idDesdeArgumentos(entrada.arguments)
                         EditarSiniestroScreen(
-                            siniestro = siniestrosVm.obtener(id),
+                            siniestro = casos.firstOrNull { it.id == id },
                             onVolver = { navController.navigateUp() },
                             onGuardar = { descripcion ->
-                                actualizarDescripcionYRegresar(
-                                    siniestrosVm::actualizarDescripcion,
-                                    id,
-                                    descripcion
-                                ) {
-                                    navController.popBackStack(Ruta.MisSiniestros.ruta, false)
-                                }
+                                siniestrosVm.actualizarDescripcion(id, descripcion, usuarioId)
+                                navController.popBackStack(Ruta.MisSiniestros.ruta, false)
                             }
                         )
                     }
@@ -596,93 +559,28 @@ fun AppNavegacion(
                 if (sesion.rol == RolCuenta.LIQUIDADOR) {
                     composable(Ruta.Liquidador.ruta) {
                         CasosLiquidadorScreen(
-                            liquidador = liquidador,
+                            liquidadorId = usuarioId,
                             responsable = sesion.nombre,
-                            casos = casosLiquidador,
-                            archivados = archivados,
-                            seguimientosVencidos = seguimientosVencidos,
-                            novedades = novedades,
-                            onCargarArchivados = siniestrosVm::refrescarArchivados,
-                            onArchivar = siniestrosVm::archivarCaso,
-                            onRestaurar = siniestrosVm::restaurarCaso,
-                            onGestionar = { navController.navigate(Ruta.GestionCaso.crear(it)) }
-                        )
-                    }
-                    composable(
-                        Ruta.GestionCaso.ruta,
-                        arguments = listOf(navArgument("id") { type = NavType.LongType })
-                    ) { entrada ->
-                        val id = idDesdeArgumentos(entrada.arguments)
-                        GestionCasoScreen(
-                            caso = casosLiquidador.firstOrNull { it.id == id },
-                            gestiones = gestionesLiquidador,
-                            solicitudes = solicitudesLiquidador,
-                            consultas = consultasLiquidador,
-                            seguimientoVencido = id in seguimientosVencidos,
-                            onCargar = { siniestrosVm.cargarGestionesLiquidador(id) },
-                            onRegistrarGestion = siniestrosVm::registrarGestionLiquidador,
-                            onSolicitarDocumento = siniestrosVm::solicitarDocumentoLiquidador,
-                            onAvanzar = siniestrosVm::avanzarLiquidador,
-                            onCerrarAnticipado = siniestrosVm::cerrarAnticipadoLiquidador,
-                            onResponderConsulta = { consultaId, respuesta ->
-                                siniestrosVm.responderConsulta(id, consultaId, respuesta)
-                            },
-                            onMarcarRecibida = { solicitudId ->
-                                siniestrosVm.marcarSolicitudRecibida(id, solicitudId)
-                            },
-                            onAnularSolicitud = { solicitudId ->
-                                siniestrosVm.anularSolicitud(id, solicitudId)
-                            },
-                            onVerDocumentos = {
-                                navController.navigate(Ruta.DocumentosLiquidador.crear(it))
-                            },
-                            onVolver = { navController.navigateUp() }
+                            viewModel = siniestrosVm
                         )
                     }
                     composable(Ruta.Disponibles.ruta) {
+                        LaunchedEffect(usuarioId) {
+                            if (usuarioId.isNotBlank()) siniestrosVm.cargarDisponibles(usuarioId)
+                        }
                         DisponiblesLiquidadorScreen(
-                            liquidador = liquidador,
-                            disponibles = disponiblesLiquidador,
-                            onTomarCaso = siniestrosVm::tomarCasoLiquidador
-                        )
-                    }
-                    composable(
-                        Ruta.DocumentosLiquidador.ruta,
-                        arguments = listOf(navArgument("id") { type = NavType.LongType })
-                    ) { entrada ->
-                        val id = idDesdeArgumentos(entrada.arguments)
-                        DocumentosLiquidadorScreen(
-                            siniestro = casosLiquidador.firstOrNull { it.id == id },
-                            evidencias = evidenciasLiquidador,
-                            onVolver = { navController.navigateUp() },
-                            onCargar = { siniestrosVm.cargarEvidenciasLiquidador(id) },
-                            onCargarImagen = { evidenciaId ->
-                                siniestrosVm.cargarImagenLiquidador(id, evidenciaId)
-                            },
-                            onCargarMiniatura = { evidenciaId ->
-                                siniestrosVm.cargarMiniaturaLiquidador(id, evidenciaId)
-                            },
-                            onDescargar = { evidenciaId, destino ->
-                                siniestrosVm.descargarDocumentoLiquidador(id, evidenciaId, destino)
-                            },
-                            onGuardarFoto = { tipo, bitmap ->
-                                siniestrosVm.guardarFotoLiquidador(id, tipo, bitmap)
-                            },
-                            onGuardarArchivo = { tipo, uri ->
-                                siniestrosVm.guardarArchivoLiquidador(id, tipo, uri)
-                            },
-                            onEliminar = { evidenciaId ->
-                                siniestrosVm.eliminarEvidenciaLiquidador(id, evidenciaId)
-                            }
+                            equipo = sesion.equipo.orEmpty(),
+                            disponibles = disponibles,
+                            onTomarCaso = { casoId -> siniestrosVm.tomarCaso(casoId, usuarioId) }
                         )
                     }
                     composable(Ruta.EstadisticasLiquidador.ruta) {
                         EstadisticasLiquidadorScreen(
-                            liquidador = liquidador,
+                            equipo = sesion.equipo.orEmpty(),
                             responsable = sesion.nombre,
-                            casos = casosLiquidador,
-                            disponibles = disponiblesLiquidador,
-                            seguimientosVencidos = seguimientosVencidos
+                            casos = casos,
+                            disponibles = disponibles,
+                            seguimientosVencidos = emptySet()
                         )
                     }
                 }
@@ -690,9 +588,9 @@ fun AppNavegacion(
             BarraInferior(
                 rol = sesion.rol,
                 rutaActual = rutaActual,
-                cantidadAvisos = contarAvisosNoLeidos(avisos),
-                cantidadDisponibles = disponiblesLiquidador.size,
-                cantidadPorAsignar = sinAsignar.size,
+                cantidadAvisos = avisosSinLeer.toInt(),
+                cantidadDisponibles = disponibles.size,
+                cantidadPorAsignar = casos.size,
                 onNavegar = { ruta ->
                     navController.navigate(ruta) {
                         popUpTo(inicio)
@@ -700,7 +598,7 @@ fun AppNavegacion(
                     }
                 },
                 onPerfil = { navController.navigate(Ruta.Perfil.ruta) },
-                onSiniestrosApi = { navController.navigate(Ruta.SiniestrosApi.ruta) },
+                onVerSiniestros = { navController.navigate(Ruta.Siniestros.ruta) },
                 onCambiarUsuario = cuentaVm::cerrarSesion
             )
         }

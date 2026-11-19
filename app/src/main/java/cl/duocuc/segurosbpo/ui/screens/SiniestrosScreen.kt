@@ -34,16 +34,16 @@ import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
-import cl.duocuc.segurosbpo.viewmodel.SiniestrosRemotosViewModel
+import cl.duocuc.segurosbpo.viewmodel.SiniestrosViewModel
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.remember
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SiniestrosRemotosScreen(
+fun SiniestrosScreen(
     usuarioId: String,
     rol: RolCuenta,
-    viewModel: SiniestrosRemotosViewModel = viewModel()
+    viewModel: SiniestrosViewModel = viewModel()
 ) {
     val siniestros by viewModel.siniestros.collectAsStateWithLifecycle()
     val cargando by viewModel.cargando.collectAsStateWithLifecycle()
@@ -67,7 +67,7 @@ fun SiniestrosRemotosScreen(
     }
 
     Scaffold(
-        topBar = { BarraSuperior(stringResource(R.string.titulo_siniestros_api)) }
+        topBar = { BarraSuperior(stringResource(R.string.titulo_siniestros)) }
     ) { margen ->
         Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
             Column(
@@ -104,11 +104,11 @@ fun SiniestrosRemotosScreen(
                 }
 
                 if (!cargando && error == null && siniestros.isEmpty()) {
-                    Text(stringResource(R.string.vacio_siniestros_api))
+                    Text(stringResource(R.string.vacio_siniestros))
                 }
 
                 siniestros.forEach { siniestro ->
-                    TarjetaSiniestroRemoto(siniestro)
+                    TarjetaSiniestro(siniestro)
                 }
             }
             AvisoSuperior(aviso)
@@ -117,7 +117,7 @@ fun SiniestrosRemotosScreen(
 }
 
 @Composable
-private fun TarjetaSiniestroRemoto(siniestro: SiniestroResponse) {
+private fun TarjetaSiniestro(siniestro: SiniestroResponse) {
     Card(Modifier.fillMaxWidth()) {
         Column(
             Modifier.padding(Dimens.espacioMedio),
@@ -156,8 +156,8 @@ private fun TarjetaSiniestroRemoto(siniestro: SiniestroResponse) {
 
 @Preview(showBackground = true, heightDp = 720)
 @Composable
-internal fun SiniestrosRemotosScreenPreview() {
+internal fun SiniestrosScreenPreview() {
     SegurosBpoTheme {
-        SiniestrosRemotosScreen(usuarioId = "1", rol = RolCuenta.ASEGURADO)
+        SiniestrosScreen(usuarioId = "1", rol = RolCuenta.ASEGURADO)
     }
 }

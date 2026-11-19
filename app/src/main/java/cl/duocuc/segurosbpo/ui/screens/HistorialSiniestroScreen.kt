@@ -18,8 +18,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import cl.duocuc.segurosbpo.model.Gestion
-import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.data.remote.GestionResponse
+import cl.duocuc.segurosbpo.data.remote.SiniestroResponse
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 import cl.duocuc.segurosbpo.ui.preview.Muestras
@@ -28,8 +28,8 @@ import androidx.compose.ui.tooling.preview.Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistorialSiniestroScreen(
-    siniestro: Siniestro?,
-    gestiones: List<Gestion>,
+    siniestro: SiniestroResponse?,
+    gestiones: List<GestionResponse>,
     onCargar: () -> Unit,
     onVolver: () -> Unit
 ) {
@@ -70,8 +70,8 @@ fun HistorialSiniestroScreen(
 internal fun HistorialSiniestroScreenPreview() {
     SegurosBpoTheme {
         HistorialSiniestroScreen(
-            siniestro = Muestras.siniestroEnEvaluacion,
-            gestiones = Muestras.gestiones,
+            siniestro = Muestras.siniestrosApi.first(),
+            gestiones = Muestras.gestionesApi,
             onCargar = {},
             onVolver = {}
         )

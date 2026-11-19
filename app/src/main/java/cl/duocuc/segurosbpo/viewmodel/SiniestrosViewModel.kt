@@ -1,552 +1,417 @@
 package cl.duocuc.segurosbpo.viewmodel
 
-import android.app.Application
+import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import cl.duocuc.segurosbpo.data.ArchivoRepository
+import cl.duocuc.segurosbpo.data.CatalogoRepository
 import cl.duocuc.segurosbpo.data.ProcesadorEvidencia
-import cl.duocuc.segurosbpo.model.AvisoSiniestro
-import cl.duocuc.segurosbpo.model.SolicitudDocumento
-import cl.duocuc.segurosbpo.model.Evidencia
-import cl.duocuc.segurosbpo.model.Gestion
-import cl.duocuc.segurosbpo.model.Liquidador
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import androidx.lifecycle.AndroidViewModel
-import cl.duocuc.segurosbpo.data.SiniestroDbHelper
-import cl.duocuc.segurosbpo.model.Asegurado
-import cl.duocuc.segurosbpo.model.Consulta
-import cl.duocuc.segurosbpo.model.EvaluacionCierre
-import cl.duocuc.segurosbpo.model.EtapaSiniestro
-import cl.duocuc.segurosbpo.model.FormularioUiState
-import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.data.SesionRepository
+import cl.duocuc.segurosbpo.data.SiniestroRepository
+import cl.duocuc.segurosbpo.data.remote.CompaniaResponse
+import cl.duocuc.segurosbpo.data.remote.AvisoResponse
+import cl.duocuc.segurosbpo.data.remote.CargaLiquidadorResponse
+import cl.duocuc.segurosbpo.data.remote.ConsultaResponse
+import cl.duocuc.segurosbpo.data.remote.EvaluacionResponse
+import cl.duocuc.segurosbpo.data.remote.SolicitudResponse
+import cl.duocuc.segurosbpo.data.remote.ComunaResponse
+import cl.duocuc.segurosbpo.data.remote.EvidenciaResponse
+import cl.duocuc.segurosbpo.data.remote.GestionResponse
+import cl.duocuc.segurosbpo.data.remote.RegionResponse
+import cl.duocuc.segurosbpo.data.remote.RegistrarSiniestroRequest
+import cl.duocuc.segurosbpo.data.remote.SiniestroResponse
+import cl.duocuc.segurosbpo.data.remote.TipoSiniestroResponse
+import cl.duocuc.segurosbpo.data.remote.UsuarioResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import kotlinx.coroutines.launch
 
+class SiniestrosViewModel(
+    private val repositorio: SiniestroRepository = SiniestroRepository(),
+    private val catalogos: CatalogoRepository = CatalogoRepository(),
+    private val sesion: SesionRepository = SesionRepository(),
+    private val archivos: ArchivoRepository = ArchivoRepository()
+) : ViewModel() {
 
-private fun marcaDeTiempo(): String =
-    SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.ROOT).format(Date())
-
-fun mensajeError(error: Throwable, predeterminado: String): String =
-    error.message ?: predeterminado
-
-class SiniestrosViewModel @JvmOverloads constructor(
-    application: Application,
-    private val db: SiniestroDbHelper = SiniestroDbHelper(application)
-) : AndroidViewModel(application) {
-    private val preferencias = application.getSharedPreferences("sesion_demo", 0)
-    private val inicial = runCatching {
-        Asegurado.valueOf(preferencias.getString("asegurado", Asegurado.CAMILA.name)!!)
-    }.getOrDefault(Asegurado.CAMILA)
-
-    private val _asegurado = MutableStateFlow(inicial)
-    val asegurado = _asegurado.asStateFlow()
-    private val _siniestros = MutableStateFlow(db.listar(inicial))
+    private val _siniestros = MutableStateFlow<List<SiniestroResponse>>(emptyList())
     val siniestros = _siniestros.asStateFlow()
-    private val _estadisticasAsegurado = MutableStateFlow(db.listar(inicial))
-    val estadisticasAsegurado = _estadisticasAsegurado.asStateFlow()
-    private val _busqueda = MutableStateFlow("")
-    val busqueda = _busqueda.asStateFlow()
-    private val _evidencias = MutableStateFlow<List<Evidencia>>(emptyList())
-    val evidencias = _evidencias.asStateFlow()
-    private val _gestiones = MutableStateFlow<List<Gestion>>(emptyList())
+
+    private val _gestiones = MutableStateFlow<List<GestionResponse>>(emptyList())
     val gestiones = _gestiones.asStateFlow()
-    private val _liquidador = MutableStateFlow(Liquidador.VEHICULOS)
-    val liquidador = _liquidador.asStateFlow()
-    private val _casosLiquidador = MutableStateFlow(db.listarAsignados(Liquidador.VEHICULOS))
-    val casosLiquidador = _casosLiquidador.asStateFlow()
-    private val _seguimientosVencidos = MutableStateFlow(db.listarSeguimientosVencidos(Liquidador.VEHICULOS))
-    val seguimientosVencidos = _seguimientosVencidos.asStateFlow()
-    private val _disponiblesLiquidador = MutableStateFlow(db.listarDisponibles(Liquidador.VEHICULOS))
-    val disponiblesLiquidador = _disponiblesLiquidador.asStateFlow()
-    private val _gestionesLiquidador = MutableStateFlow<List<Gestion>>(emptyList())
-    val gestionesLiquidador = _gestionesLiquidador.asStateFlow()
-    private val _solicitudes = MutableStateFlow<List<SolicitudDocumento>>(emptyList())
-    val solicitudes = _solicitudes.asStateFlow()
-    private val _solicitudesLiquidador = MutableStateFlow<List<SolicitudDocumento>>(emptyList())
-    val solicitudesLiquidador = _solicitudesLiquidador.asStateFlow()
-    private val _evidenciasLiquidador = MutableStateFlow<List<Evidencia>>(emptyList())
-    val evidenciasLiquidador = _evidenciasLiquidador.asStateFlow()
-    private val _avisos = MutableStateFlow<List<AvisoSiniestro>>(db.listarAvisos(inicial))
-    val avisos = _avisos.asStateFlow()
-    private val _consultas = MutableStateFlow<List<Consulta>>(emptyList())
-    val consultas = _consultas.asStateFlow()
-    private val _consultasLiquidador = MutableStateFlow<List<Consulta>>(emptyList())
-    val consultasLiquidador = _consultasLiquidador.asStateFlow()
-    private val _evaluacion = MutableStateFlow<EvaluacionCierre?>(null)
-    val evaluacion = _evaluacion.asStateFlow()
-    private val _sinAsignar = MutableStateFlow<List<Siniestro>>(emptyList())
-    val sinAsignar = _sinAsignar.asStateFlow()
-    private val _cargaEquipos = MutableStateFlow<Map<Liquidador, Int>>(emptyMap())
-    val cargaEquipos = _cargaEquipos.asStateFlow()
-    private val _actualizadoEn = MutableStateFlow(marcaDeTiempo())
-    val actualizadoEn = _actualizadoEn.asStateFlow()
-    private val _companias = MutableStateFlow(db.listarCompanias())
+
+    private val _evidencias = MutableStateFlow<List<EvidenciaResponse>>(emptyList())
+    val evidencias = _evidencias.asStateFlow()
+
+    private val _companias = MutableStateFlow<List<CompaniaResponse>>(emptyList())
     val companias = _companias.asStateFlow()
-    private val _tipos = MutableStateFlow(db.listarTipos())
+
+    private val _tipos = MutableStateFlow<List<TipoSiniestroResponse>>(emptyList())
     val tipos = _tipos.asStateFlow()
-    private val _cargaPersonas = MutableStateFlow<Map<String, Int>>(emptyMap())
-    val cargaPersonas = _cargaPersonas.asStateFlow()
-    private var identidadLiquidador: String? = null
-    private var nombreLiquidador: String = ""
 
-    private fun responsable(): String =
-        nombreLiquidador.ifBlank { _liquidador.value.equipo }
+    private val _regiones = MutableStateFlow<List<RegionResponse>>(emptyList())
+    val regiones = _regiones.asStateFlow()
 
-    private val _novedades = MutableStateFlow<Map<Long, Int>>(emptyMap())
-    val novedades = _novedades.asStateFlow()
-    private val _archivados = MutableStateFlow<List<Siniestro>>(emptyList())
+    private val _comunas = MutableStateFlow<List<ComunaResponse>>(emptyList())
+    val comunas = _comunas.asStateFlow()
+
+    private val _cargaLiquidadores = MutableStateFlow<List<CargaLiquidadorResponse>>(emptyList())
+    val cargaLiquidadores = _cargaLiquidadores.asStateFlow()
+
+    private val _liquidadores = MutableStateFlow<List<UsuarioResponse>>(emptyList())
+    val liquidadores = _liquidadores.asStateFlow()
+
+    private val _avisos = MutableStateFlow<List<AvisoResponse>>(emptyList())
+    val avisos = _avisos.asStateFlow()
+
+    private val _sinLeer = MutableStateFlow(0L)
+    val sinLeer = _sinLeer.asStateFlow()
+
+    private val _solicitudes = MutableStateFlow<List<SolicitudResponse>>(emptyList())
+    val solicitudes = _solicitudes.asStateFlow()
+
+    private val _consultas = MutableStateFlow<List<ConsultaResponse>>(emptyList())
+    val consultas = _consultas.asStateFlow()
+
+    private val _disponibles = MutableStateFlow<List<SiniestroResponse>>(emptyList())
+    val disponibles = _disponibles.asStateFlow()
+
+    private val _archivados = MutableStateFlow<List<SiniestroResponse>>(emptyList())
     val archivados = _archivados.asStateFlow()
 
-    fun seleccionarLiquidador(nuevo: Liquidador) {
-        _liquidador.value = nuevo
-        _gestionesLiquidador.value = emptyList()
-        _solicitudesLiquidador.value = emptyList()
-        _consultasLiquidador.value = emptyList()
-        _archivados.value = emptyList()
-        refrescarAsignados()
-        refrescarArchivados()
+    private val _evaluacion = MutableStateFlow<EvaluacionResponse?>(null)
+    val evaluacion = _evaluacion.asStateFlow()
+
+    private val _cargando = MutableStateFlow(false)
+    val cargando = _cargando.asStateFlow()
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error = _error.asStateFlow()
+
+    private val _aviso = MutableStateFlow<String?>(null)
+    val aviso = _aviso.asStateFlow()
+
+    fun cargarDeAsegurado(aseguradoId: String) {
+        ejecutar { _siniestros.value = repositorio.listarPorAsegurado(aseguradoId) }
     }
 
-    fun refrescarAsignados() {
-        _casosLiquidador.value = db.listarAsignados(_liquidador.value, identidadLiquidador)
-        _disponiblesLiquidador.value = db.listarDisponibles(_liquidador.value)
-        _seguimientosVencidos.value = db.listarSeguimientosVencidos(_liquidador.value)
-        _novedades.value = db.novedadesPorCaso(_liquidador.value, identidadLiquidador)
-        _actualizadoEn.value = marcaDeTiempo()
+    fun cargarDeLiquidador(liquidadorId: String) {
+        ejecutar { _siniestros.value = repositorio.listarPorLiquidador(liquidadorId) }
     }
 
-    fun tomarCasoLiquidador(id: Long): String? {
-        val resultado = runCatching {
-            db.tomarCaso(
-                id, _liquidador.value, identidadLiquidador.orEmpty(), nombreLiquidador
-            )
+    fun cargarSinAsignar() {
+        ejecutar {
+            _siniestros.value = repositorio.listarSinAsignar()
+            _liquidadores.value = sesion.listarUsuarios().filter { it.rolId == "2" }
         }
-        val mensaje = resultado.fold(
-            onSuccess = { asignado ->
-                if (asignado) null else "El caso ya fue tomado o no corresponde a tu área"
-            },
-            onFailure = { mensajeError(it, "No se pudo tomar el caso") }
+    }
+
+    fun cargarCatalogos() {
+        ejecutar {
+            _companias.value = catalogos.listarCompanias()
+            _tipos.value = catalogos.listarTipos()
+            _regiones.value = catalogos.listarRegiones()
+        }
+    }
+
+    fun cargarCarga() {
+        ejecutar { _cargaLiquidadores.value = repositorio.listarCarga() }
+    }
+
+    fun subirFoto(
+        siniestroId: String,
+        tipoDocumento: String,
+        subidoPor: String,
+        bitmap: Bitmap
+    ) {
+        val archivo = ProcesadorEvidencia.desdeCamara(bitmap)
+        subirEvidencia(
+            siniestroId, tipoDocumento, subidoPor,
+            archivo.nombre, archivo.mime, archivo.bytes
         )
-        refrescarAsignados()
-        if (mensaje == null) {
-            refrescar()
-            refrescarAvisos()
-        }
-        return mensaje
     }
 
-    fun cargarGestionesLiquidador(id: Long) {
-        _gestionesLiquidador.value = db.listarGestionesAsignadas(id, _liquidador.value)
-        _solicitudesLiquidador.value = db.listarSolicitudesAsignadas(id, _liquidador.value)
-        _consultasLiquidador.value = db.listarConsultasAsignadas(id, _liquidador.value)
+    fun subirArchivo(
+        contexto: Context,
+        siniestroId: String,
+        tipoDocumento: String,
+        subidoPor: String,
+        uri: Uri
+    ) {
+        val archivo = runCatching { ProcesadorEvidencia.desdeSelector(contexto, uri) }
+        archivo.fold(
+            onSuccess = {
+                subirEvidencia(
+                    siniestroId, tipoDocumento, subidoPor, it.nombre, it.mime, it.bytes
+                )
+            },
+            onFailure = { _error.value = it.message ?: "No se pudo leer el archivo" }
+        )
     }
 
-    fun solicitarDocumentoLiquidador(id: Long, tipo: String, comentario: String): String? {
-        val error = runCatching {
-            db.solicitarDocumento(id, _liquidador.value, tipo, comentario, responsable())
-        }.exceptionOrNull()?.let { mensajeError(it, "No se pudo solicitar el documento") }
-        if (error == null) {
-            refrescarAsignados()
-            cargarGestionesLiquidador(id)
-            refrescar()
-            refrescarAvisos()
-        }
-        return error
-    }
-
-    fun registrarGestionLiquidador(id: Long, descripcion: String, visible: Boolean): String? {
-        val error = runCatching {
-            db.registrarGestionAsignada(
-                id, _liquidador.value, descripcion, visible, responsable()
-            )
-        }.exceptionOrNull()?.let { mensajeError(it, "No se pudo guardar la gestión") }
-        if (error == null) {
-            refrescarAsignados()
-            cargarGestionesLiquidador(id)
-        }
-        return error
-    }
-
-    fun avanzarLiquidador(id: Long, resultado: String, mensaje: String): String? {
-        val error = runCatching {
-            db.avanzarAsignado(
-                id, _liquidador.value, resultado, mensaje, null, responsable()
-            )
-        }.exceptionOrNull()?.let { mensajeError(it, "No se pudo avanzar de etapa") }
-        if (error == null) {
-            refrescarAsignados()
-            cargarGestionesLiquidador(id)
-            refrescar()
-            refrescarAvisos()
-        }
-        return error
-    }
-
-    fun cerrarAnticipadoLiquidador(id: Long, resultado: String, mensaje: String): String? {
-        val error = runCatching {
-            db.avanzarAsignado(
-                id, _liquidador.value, resultado, mensaje,
-                EtapaSiniestro.CERRADO, responsable()
-            )
-        }.exceptionOrNull()?.let { mensajeError(it, "No se pudo cerrar el siniestro") }
-        if (error == null) {
-            refrescarAsignados()
-            cargarGestionesLiquidador(id)
-            refrescar()
-            refrescarAvisos()
-        }
-        return error
-    }
-
-    fun buscar(texto: String) {
-        _busqueda.value = texto
-        refrescar()
-    }
-
-    fun seleccionarAsegurado(nuevo: Asegurado) {
-        _evidencias.value = emptyList()
-        _gestiones.value = emptyList()
-        _solicitudes.value = emptyList()
-        _consultas.value = emptyList()
-        _evaluacion.value = null
-        _busqueda.value = ""
-        _asegurado.value = nuevo
-        preferencias.edit().putString("asegurado", nuevo.name).apply()
-        refrescar()
-        refrescarAvisos()
-    }
-
-    fun refrescar() {
-        _siniestros.value = db.listar(_asegurado.value, _busqueda.value)
-        _estadisticasAsegurado.value = db.listar(_asegurado.value)
-        _actualizadoEn.value = marcaDeTiempo()
-    }
-
-    fun buscarPosibleDuplicado(estado: FormularioUiState): String? =
-        if (estado.asegurado.name != _asegurado.value.name) null else db.buscarPosibleDuplicado(estado)
-
-    var ultimoRegistrado: Long? = null
-        private set
-
-    fun registrar(estado: FormularioUiState): String {
-        require(estado.asegurado == _asegurado.value) { "El asegurado seleccionado cambió" }
-        val nuevo = db.registrar(estado)
-        ultimoRegistrado = nuevo.id
-        refrescar()
-        refrescarAsignados()
-        return nuevo.numero
-    }
-
-    fun obtener(id: Long): Siniestro? = db.obtener(id, _asegurado.value)
-
-    fun actualizarDescripcion(id: Long, descripcion: String): Boolean {
-        val actualizado = db.actualizarDescripcion(id, _asegurado.value, descripcion)
-        if (actualizado) refrescar()
-        return actualizado
-    }
-
-    suspend fun cargarImagen(siniestroId: Long, evidenciaId: Long): Bitmap? {
-        val propietario = _asegurado.value
-        return withContext(Dispatchers.IO) {
-            runCatching { db.obtenerImagen(evidenciaId, siniestroId, propietario) }.getOrNull()
+    fun cargarAvisos(usuarioId: String) {
+        ejecutar {
+            _avisos.value = repositorio.listarAvisos(usuarioId)
+            _sinLeer.value = repositorio.avisosSinLeer(usuarioId)
         }
     }
 
-    suspend fun descargarDocumentoLiquidador(
-        siniestroId: Long, evidenciaId: Long, destino: Uri
-    ): String? {
-        val equipo = _liquidador.value
-        val contexto = getApplication<Application>()
-        return withContext(Dispatchers.IO) {
-            runCatching {
-                val archivo = db.obtenerArchivoAsignado(evidenciaId, siniestroId, equipo)
-                    ?: return@runCatching "El documento no está disponible"
-                val salida = contexto.contentResolver.openOutputStream(destino)
-                    ?: return@runCatching "No se pudo escribir el archivo"
-                salida.use { it.write(archivo.bytes) }
-                null
-            }.getOrElse { mensajeError(it, "No se pudo descargar el documento") }
+    fun marcarAvisoLeido(id: String, usuarioId: String) {
+        ejecutar {
+            repositorio.marcarAvisoLeido(id)
+            _avisos.value = repositorio.listarAvisos(usuarioId)
+            _sinLeer.value = repositorio.avisosSinLeer(usuarioId)
         }
     }
 
-    suspend fun cargarMiniatura(siniestroId: Long, evidenciaId: Long): Bitmap? {
-        val propietario = _asegurado.value
-        return withContext(Dispatchers.IO) {
-            runCatching { db.obtenerImagen(evidenciaId, siniestroId, propietario, 240) }.getOrNull()
+    fun cargarSolicitudes(siniestroId: String) {
+        ejecutar { _solicitudes.value = repositorio.listarSolicitudes(siniestroId) }
+    }
+
+    fun solicitarDocumento(
+        siniestroId: String,
+        tipoDocumento: String,
+        comentario: String,
+        solicitadoPor: String
+    ) {
+        ejecutar {
+            repositorio.solicitar(siniestroId, tipoDocumento, comentario, solicitadoPor)
+            _solicitudes.value = repositorio.listarSolicitudes(siniestroId)
+            _aviso.value = "Documento solicitado al asegurado"
         }
     }
 
-    suspend fun cargarMiniaturaLiquidador(siniestroId: Long, evidenciaId: Long): Bitmap? {
-        val equipo = _liquidador.value
-        return withContext(Dispatchers.IO) {
-            runCatching {
-                db.obtenerImagenAsignada(evidenciaId, siniestroId, equipo, 240)
+    fun marcarSolicitudRecibida(id: String, siniestroId: String) {
+        ejecutar {
+            repositorio.marcarSolicitudRecibida(id)
+            _solicitudes.value = repositorio.listarSolicitudes(siniestroId)
+            _aviso.value = "Documento marcado como recibido"
+        }
+    }
+
+    fun anularSolicitud(id: String, siniestroId: String) {
+        ejecutar {
+            repositorio.anularSolicitud(id)
+            _solicitudes.value = repositorio.listarSolicitudes(siniestroId)
+            _aviso.value = "Solicitud anulada"
+        }
+    }
+
+    fun cargarConsultas(siniestroId: String) {
+        ejecutar { _consultas.value = repositorio.listarConsultas(siniestroId) }
+    }
+
+    fun preguntar(siniestroId: String, texto: String) {
+        ejecutar {
+            repositorio.preguntar(siniestroId, texto)
+            _consultas.value = repositorio.listarConsultas(siniestroId)
+            _aviso.value = "Consulta enviada"
+        }
+    }
+
+    fun responderConsulta(id: String, siniestroId: String, texto: String) {
+        ejecutar {
+            repositorio.responderConsulta(id, texto)
+            _consultas.value = repositorio.listarConsultas(siniestroId)
+            _aviso.value = "Respuesta enviada"
+        }
+    }
+
+    fun cargarDisponibles(liquidadorId: String) {
+        ejecutar { _disponibles.value = repositorio.listarDisponibles(liquidadorId) }
+    }
+
+    fun tomarCaso(id: String, liquidadorId: String) {
+        ejecutar {
+            repositorio.tomar(id, liquidadorId)
+            _disponibles.value = repositorio.listarDisponibles(liquidadorId)
+            _siniestros.value = repositorio.listarPorLiquidador(liquidadorId)
+            _aviso.value = "Tomaste el caso"
+        }
+    }
+
+    fun cargarArchivados(liquidadorId: String) {
+        ejecutar { _archivados.value = repositorio.listarArchivados(liquidadorId) }
+    }
+
+    fun archivar(id: String, liquidadorId: String) {
+        ejecutar {
+            repositorio.archivar(id)
+            _siniestros.value = repositorio.listarPorLiquidador(liquidadorId)
+            _archivados.value = repositorio.listarArchivados(liquidadorId)
+            _aviso.value = "Caso archivado"
+        }
+    }
+
+    fun restaurar(id: String, liquidadorId: String) {
+        ejecutar {
+            repositorio.restaurar(id)
+            _siniestros.value = repositorio.listarPorLiquidador(liquidadorId)
+            _archivados.value = repositorio.listarArchivados(liquidadorId)
+            _aviso.value = "Caso restaurado"
+        }
+    }
+
+    fun cargarEvaluacion(siniestroId: String) {
+        viewModelScope.launch {
+            _evaluacion.value = runCatching {
+                repositorio.obtenerEvaluacion(siniestroId)
             }.getOrNull()
         }
     }
 
-    fun refrescarGestiones(id: Long) {
-        _gestiones.value = db.listarGestiones(id, _asegurado.value)
-    }
-
-    fun refrescarEvidencias(id: Long) {
-        _evidencias.value = db.listarEvidencias(id, _asegurado.value)
-        _solicitudes.value = db.listarSolicitudes(id, _asegurado.value)
-    }
-
-    fun refrescarAvisos() {
-        db.generarRecordatorios()
-        _avisos.value = db.listarAvisos(_asegurado.value)
-    }
-
-    fun marcarAvisoLeido(id: Long) {
-        db.marcarAvisoLeido(id, _asegurado.value)
-        refrescarAvisos()
-    }
-
-    fun cargarEvidenciasLiquidador(id: Long) {
-        _evidenciasLiquidador.value =
-            runCatching { db.listarEvidenciasAsignadas(id, _liquidador.value) }
-                .getOrDefault(emptyList())
-    }
-
-    suspend fun cargarImagenLiquidador(siniestroId: Long, evidenciaId: Long): Bitmap? {
-        val equipo = _liquidador.value
-        return withContext(Dispatchers.IO) {
-            runCatching { db.obtenerImagenAsignada(evidenciaId, siniestroId, equipo) }.getOrNull()
+    fun evaluar(siniestroId: String, nota: Int, comentario: String) {
+        ejecutar {
+            _evaluacion.value = repositorio.evaluar(siniestroId, nota, comentario)
+            _aviso.value = "Gracias por tu evaluación"
         }
     }
 
-    suspend fun guardarFotoLiquidador(id: Long, tipoDocumento: String, bitmap: Bitmap): String? {
-        val equipo = _liquidador.value
-        val error = withContext(Dispatchers.IO) {
-            runCatching {
-                db.guardarEvidenciaLiquidador(
-                    id, equipo, tipoDocumento, ProcesadorEvidencia.desdeCamara(bitmap)
+    fun desistir(siniestroId: String, motivo: String, aseguradoId: String) {
+        ejecutar {
+            repositorio.desistir(siniestroId, motivo)
+            _siniestros.value = repositorio.listarPorAsegurado(aseguradoId)
+            _aviso.value = "Desististe del caso"
+        }
+    }
+
+    fun actualizarDescripcion(siniestroId: String, descripcion: String, aseguradoId: String) {
+        ejecutar {
+            repositorio.actualizarDescripcion(siniestroId, descripcion)
+            _siniestros.value = repositorio.listarPorAsegurado(aseguradoId)
+            _aviso.value = "Descripción actualizada"
+        }
+    }
+
+    fun cargarComunas(regionCodigo: String) {
+        _comunas.value = emptyList()
+        ejecutar { _comunas.value = catalogos.listarComunas(regionCodigo) }
+    }
+
+    fun registrar(
+        aseguradoId: String,
+        companiaCodigo: String,
+        tipoCodigo: String,
+        fechaOcurrencia: String,
+        comuna: String,
+        descripcion: String,
+        huboTerceros: Boolean,
+        alTerminar: (SiniestroResponse?) -> Unit = {}
+    ) {
+        ejecutar {
+            val nuevo = repositorio.registrar(
+                RegistrarSiniestroRequest(
+                    aseguradoId, companiaCodigo, tipoCodigo,
+                    fechaOcurrencia, comuna, descripcion, huboTerceros
                 )
-            }.exceptionOrNull()?.let { mensajeError(it, "No se pudo guardar el documento") }
-        }
-        if (error == null) {
-            cargarEvidenciasLiquidador(id)
-            cargarGestionesLiquidador(id)
-            refrescarAsignados()
-        }
-        return error
-    }
-
-    suspend fun guardarArchivoLiquidador(id: Long, tipoDocumento: String, uri: Uri): String? {
-        val equipo = _liquidador.value
-        val error = withContext(Dispatchers.IO) {
-            runCatching {
-                val archivo = ProcesadorEvidencia.desdeSelector(getApplication(), uri)
-                db.guardarEvidenciaLiquidador(id, equipo, tipoDocumento, archivo)
-            }.exceptionOrNull()?.let { mensajeError(it, "No se pudo guardar el documento") }
-        }
-        if (error == null) {
-            cargarEvidenciasLiquidador(id)
-            cargarGestionesLiquidador(id)
-            refrescarAsignados()
-        }
-        return error
-    }
-
-    suspend fun guardarFoto(id: Long, tipoDocumento: String, bitmap: Bitmap): String? {
-        val propietario = _asegurado.value
-        val error = withContext(Dispatchers.IO) {
-            runCatching {
-                db.guardarEvidencia(id, propietario, tipoDocumento, ProcesadorEvidencia.desdeCamara(bitmap))
-            }.exceptionOrNull()?.let { mensajeError(it, "No se pudo guardar el documento") }
-        }
-        if (error == null) {
-            refrescarEvidencias(id)
-            refrescar()
-        }
-        return error
-    }
-
-    suspend fun guardarArchivo(id: Long, tipoDocumento: String, uri: Uri): String? {
-        val propietario = _asegurado.value
-        val error = withContext(Dispatchers.IO) {
-            runCatching {
-                val archivo = ProcesadorEvidencia.desdeSelector(getApplication(), uri)
-                db.guardarEvidencia(id, propietario, tipoDocumento, archivo)
-            }.exceptionOrNull()?.let { mensajeError(it, "No se pudo guardar el documento") }
-        }
-        if (error == null) {
-            refrescarEvidencias(id)
-            refrescar()
-        }
-        return error
-    }
-
-    fun archivarCaso(id: Long): String? {
-        val error = runCatching { db.archivarCaso(id, _liquidador.value, responsable()) }
-            .exceptionOrNull()?.let { mensajeError(it, "No se pudo archivar el caso") }
-        if (error == null) {
-            refrescarAsignados()
-            refrescarArchivados()
-        }
-        return error
-    }
-
-    fun restaurarCaso(id: Long): String? {
-        val error = runCatching { db.restaurarCaso(id, _liquidador.value) }
-            .exceptionOrNull()?.let { mensajeError(it, "No se pudo restaurar el caso") }
-        if (error == null) {
-            refrescarAsignados()
-            refrescarArchivados()
-        }
-        return error
-    }
-
-    fun marcarSolicitudRecibida(siniestroId: Long, solicitudId: Long): String? {
-        val error = runCatching {
-            db.marcarSolicitudRecibida(solicitudId, _liquidador.value, responsable())
-        }
-            .exceptionOrNull()?.let { mensajeError(it, "No se pudo confirmar la recepción") }
-        if (error == null) {
-            cargarGestionesLiquidador(siniestroId)
-            refrescarAsignados()
-            refrescar()
-            refrescarAvisos()
-        }
-        return error
-    }
-
-    fun anularSolicitud(siniestroId: Long, solicitudId: Long): String? {
-        val error = runCatching { db.anularSolicitud(solicitudId, _liquidador.value, responsable()) }
-            .exceptionOrNull()?.let { mensajeError(it, "No se pudo anular la solicitud") }
-        if (error == null) {
-            cargarGestionesLiquidador(siniestroId)
-            refrescarAsignados()
-            refrescar()
-            refrescarAvisos()
-        }
-        return error
-    }
-
-    fun identificarLiquidador(id: String?, nombre: String = "") {
-        identidadLiquidador = id
-        nombreLiquidador = nombre
-        refrescarAsignados()
-        refrescarArchivados()
-    }
-
-    fun crearCompania(etiqueta: String, plazo: Int): String? {
-        val error = runCatching { db.crearCompania(etiqueta, plazo) }
-            .exceptionOrNull()?.let { mensajeError(it, "No se pudo crear la compañía") }
-        if (error == null) _companias.value = db.listarCompanias()
-        return error
-    }
-
-    fun crearTipoSiniestro(
-        etiqueta: String, esVehiculo: Boolean, documentos: List<String>
-    ): String? {
-        val error = runCatching { db.crearTipoSiniestro(etiqueta, esVehiculo, documentos) }
-            .exceptionOrNull()?.let { mensajeError(it, "No se pudo crear el tipo de siniestro") }
-        if (error == null) _tipos.value = db.listarTipos()
-        return error
-    }
-
-    fun refrescarArchivados() {
-        _archivados.value = db.listarArchivados(_liquidador.value, identidadLiquidador)
-    }
-
-    fun refrescarAnalista() {
-        _sinAsignar.value = db.listarSinAsignar()
-        _cargaEquipos.value = db.cargaPorLiquidador()
-        _cargaPersonas.value = db.cargaPorPersona()
-        _actualizadoEn.value = marcaDeTiempo()
-    }
-
-    fun asignarCaso(id: Long, equipo: Liquidador, personaId: String, persona: String): String? {
-        val error = runCatching { db.asignarLiquidador(id, equipo, personaId, persona) }
-            .exceptionOrNull()?.let { mensajeError(it, "No se pudo asignar el caso") }
-        if (error == null) {
-            refrescarAnalista()
-            refrescar()
-            refrescarAvisos()
-        }
-        return error
-    }
-
-    fun refrescarConsultas(id: Long) {
-        _consultas.value = db.listarConsultas(id, _asegurado.value)
-    }
-
-    fun enviarConsulta(id: Long, pregunta: String): String? {
-        val error = runCatching { db.registrarConsulta(id, _asegurado.value, pregunta) }
-            .exceptionOrNull()?.let { mensajeError(it, "No se pudo enviar la consulta") }
-        if (error == null) {
-            refrescarConsultas(id)
-            refrescarGestiones(id)
-            refrescar()
-        }
-        return error
-    }
-
-    fun responderConsulta(siniestroId: Long, consultaId: Long, respuesta: String): String? {
-        val error = runCatching {
-            db.responderConsulta(consultaId, _liquidador.value, respuesta, responsable())
-        }
-            .exceptionOrNull()?.let { mensajeError(it, "No se pudo guardar la respuesta") }
-        if (error == null) {
-            cargarGestionesLiquidador(siniestroId)
-            refrescarAsignados()
-        }
-        return error
-    }
-
-    fun desistir(id: Long, motivo: String): String? {
-        val error = runCatching { db.desistir(id, _asegurado.value, motivo) }
-            .exceptionOrNull()?.let { mensajeError(it, "No se pudo registrar el desistimiento") }
-        if (error == null) {
-            refrescar()
-            refrescarAvisos()
-            refrescarGestiones(id)
-        }
-        return error
-    }
-
-    fun refrescarEvaluacion(id: Long) {
-        _evaluacion.value = db.obtenerEvaluacion(id, _asegurado.value)
-    }
-
-    fun guardarEvaluacion(id: Long, nota: Int, comentario: String): String? {
-        val error = runCatching { db.guardarEvaluacion(id, _asegurado.value, nota, comentario) }
-            .exceptionOrNull()?.let { mensajeError(it, "No se pudo guardar la evaluación") }
-        if (error == null) refrescarEvaluacion(id)
-        return error
-    }
-
-    fun eliminarEvidencia(siniestroId: Long, evidenciaId: Long): String? {
-        val error = runCatching { db.eliminarEvidencia(evidenciaId, siniestroId, _asegurado.value) }
-            .exceptionOrNull()?.let { mensajeError(it, "No se pudo eliminar el documento") }
-        if (error == null) {
-            refrescarEvidencias(siniestroId)
-            refrescar()
-        }
-        return error
-    }
-
-    fun eliminarEvidenciaLiquidador(siniestroId: Long, evidenciaId: Long): String? {
-        val error = runCatching {
-            db.eliminarEvidenciaLiquidador(
-                evidenciaId, siniestroId, _liquidador.value, responsable()
             )
-        }.exceptionOrNull()?.let { mensajeError(it, "No se pudo eliminar el documento") }
-        if (error == null) {
-            cargarEvidenciasLiquidador(siniestroId)
-            cargarGestionesLiquidador(siniestroId)
+            _siniestros.value = listOf(nuevo) + _siniestros.value
+            _aviso.value = "Tu siniestro quedó registrado con el número " + nuevo.numero
+            alTerminar(nuevo)
         }
-        return error
     }
 
-    override fun onCleared() {
-        db.close()
-        super.onCleared()
+    fun asignar(siniestroId: String, liquidadorId: String, nombre: String) {
+        ejecutar {
+            repositorio.asignar(siniestroId, liquidadorId)
+            _siniestros.value = repositorio.listarSinAsignar()
+            _cargaLiquidadores.value = repositorio.listarCarga()
+            _aviso.value = "Caso asignado a " + nombre
+        }
+    }
+
+    fun avanzar(siniestroId: String, resultado: String, mensajeCierre: String) {
+        ejecutar {
+            val actualizado = repositorio.avanzar(siniestroId, resultado, mensajeCierre)
+            _siniestros.value = _siniestros.value.map {
+                if (it.id == actualizado.id) actualizado else it
+            }
+            _aviso.value = "El caso avanzó a " + actualizado.etapa.lowercase()
+        }
+    }
+
+    fun cargarGestiones(siniestroId: String) {
+        ejecutar { _gestiones.value = repositorio.listarGestiones(siniestroId) }
+    }
+
+    fun agregarGestion(
+        siniestroId: String,
+        responsable: String,
+        descripcion: String,
+        visible: Boolean
+    ) {
+        ejecutar {
+            repositorio.agregarGestion(siniestroId, responsable, descripcion, visible)
+            _gestiones.value = repositorio.listarGestiones(siniestroId)
+            _aviso.value = "Gestión registrada"
+        }
+    }
+
+    fun cargarEvidencias(siniestroId: String) {
+        ejecutar { _evidencias.value = archivos.listarEvidencias(siniestroId) }
+    }
+
+    fun subirEvidencia(
+        siniestroId: String,
+        tipoDocumento: String,
+        subidoPor: String,
+        nombreArchivo: String,
+        mime: String,
+        contenido: ByteArray
+    ) {
+        ejecutar {
+            archivos.subirEvidencia(
+                siniestroId, tipoDocumento, subidoPor, nombreArchivo, mime, contenido
+            )
+            _evidencias.value = archivos.listarEvidencias(siniestroId)
+            _aviso.value = "Documento enviado al servidor"
+        }
+    }
+
+    fun eliminarEvidencia(siniestroId: String, evidenciaId: String) {
+        ejecutar {
+            archivos.eliminarEvidencia(evidenciaId)
+            _evidencias.value = archivos.listarEvidencias(siniestroId)
+            _aviso.value = "Documento eliminado"
+        }
+    }
+
+    fun crearCompania(nombre: String, plazo: Int) {
+        ejecutar {
+            catalogos.crearCompania(nombre, plazo)
+            _companias.value = catalogos.listarCompanias()
+            _aviso.value = "Compañía agregada"
+        }
+    }
+
+    fun crearTipo(nombre: String, esVehiculo: Boolean, documentos: List<String>) {
+        ejecutar {
+            catalogos.crearTipo(nombre, esVehiculo, documentos)
+            _tipos.value = catalogos.listarTipos()
+            _aviso.value = "Tipo de siniestro agregado"
+        }
+    }
+
+    fun limpiarError() {
+        _error.value = null
+    }
+
+    fun limpiarAviso() {
+        _aviso.value = null
+    }
+
+    private fun ejecutar(accion: suspend () -> Unit) {
+        viewModelScope.launch {
+            _cargando.value = true
+            _error.value = null
+            try {
+                accion()
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Ocurrió un error inesperado"
+            } finally {
+                _cargando.value = false
+            }
+        }
     }
 }

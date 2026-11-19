@@ -17,8 +17,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import cl.duocuc.segurosbpo.model.Liquidador
-import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.data.remote.CargaLiquidadorResponse
+import cl.duocuc.segurosbpo.data.remote.SiniestroResponse
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
@@ -28,15 +28,15 @@ import androidx.compose.ui.tooling.preview.Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CargaEquiposScreen(
-    carga: Map<Liquidador, Int>,
-    pendientes: List<Siniestro>,
+    carga: List<CargaLiquidadorResponse>,
+    pendientes: List<SiniestroResponse>,
     actualizadoEn: String,
     onCargar: () -> Unit
 ) {
     LaunchedEffect(Unit) { onCargar() }
 
-    val total = carga.values.sum()
-    val mayor = carga.values.maxOrNull() ?: 0
+    val total = carga.sumOf { it.abiertos }.toInt()
+    val mayor = carga.maxOfOrNull { it.abiertos }?.toInt() ?: 0
 
     Scaffold(topBar = { BarraSuperior("Carga de los equipos") }) { margen ->
         Column(
@@ -57,16 +57,16 @@ fun CargaEquiposScreen(
                 }
             }
 
-            Liquidador.entries.forEach { equipo ->
-                val cantidad = carga[equipo] ?: 0
-                val enEspera = pendientes.count { it.tipo.esVehiculo == equipo.esVehiculo }
+            carga.groupBy { it.equipo }.forEach { (equipo, integrantes) ->
+                val cantidad = integrantes.sumOf { it.abiertos }.toInt()
+                val enEspera = pendientes.size
                 Card(Modifier.fillMaxWidth()) {
                     Column(
                         Modifier.padding(Dimens.espacioMedio),
                         verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
                     ) {
                         Text(
-                            "Equipo " + equipo.equipo,
+                            "Equipo " + equipo,
                             style = MaterialTheme.typography.titleMedium
                         )
                         LinearProgressIndicator(
@@ -98,8 +98,8 @@ private fun Linea(etiqueta: String, valor: String) {
 internal fun CargaEquiposScreenPreview() {
     SegurosBpoTheme {
         CargaEquiposScreen(
-            carga = Muestras.cargaPorEquipo,
-            pendientes = listOf(Muestras.siniestroRecibido),
+            carga = Muestras.cargaApi,
+            pendientes = Muestras.siniestrosApi,
             actualizadoEn = Muestras.FECHA_HORA,
             onCargar = {}
         )

@@ -23,7 +23,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import cl.duocuc.segurosbpo.R
-import cl.duocuc.segurosbpo.model.AvisoSiniestro
+import cl.duocuc.segurosbpo.data.remote.AvisoResponse
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 import cl.duocuc.segurosbpo.ui.preview.Muestras
@@ -32,11 +32,11 @@ import androidx.compose.ui.tooling.preview.Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AvisosScreen(
-    avisos: List<AvisoSiniestro>,
+    avisos: List<AvisoResponse>,
     onCargar: () -> Unit,
-    onMarcarLeido: (Long) -> Unit,
-    onAbrirCaso: (Long) -> Unit,
-    onAdjuntar: (Long) -> Unit,
+    onMarcarLeido: (String) -> Unit,
+    onAbrirCaso: (String) -> Unit,
+    onAdjuntar: (String) -> Unit,
     onVolver: () -> Unit
 ) {
     LaunchedEffect(Unit) { onCargar() }
@@ -53,7 +53,7 @@ fun AvisosScreen(
                             modifier = Modifier.padding(Dimens.espacioMedio),
                             verticalArrangement = Arrangement.spacedBy(Dimens.espacioCorto)
                         ) {
-                            CodigoSiniestro(aviso.numeroSiniestro)
+                            CodigoSiniestro(aviso.numero)
                             Text(aviso.mensaje)
                             Text(
                                 stringResource(
@@ -67,14 +67,21 @@ fun AvisosScreen(
                                 style = MaterialTheme.typography.bodySmall
                             )
 
-                            if (aviso.documentoPedido != null) {
+                            if (aviso.mensaje.startsWith(PIDEN_DOCUMENTO)) {
                                 Button(
                                     modifier = Modifier.fillMaxWidth(),
                                     onClick = {
                                         onMarcarLeido(aviso.id)
                                         onAdjuntar(aviso.siniestroId)
                                     }
-                                ) { Text(stringResource(R.string.btn_enviar_documento, aviso.documentoPedido)) }
+                                ) {
+                                    Text(
+                                        stringResource(
+                                            R.string.btn_enviar_documento,
+                                            aviso.mensaje.removePrefix(PIDEN_DOCUMENTO)
+                                        )
+                                    )
+                                }
                             }
 
                             Row(horizontalArrangement = Arrangement.spacedBy(Dimens.espacioMini)) {
@@ -101,7 +108,7 @@ fun AvisosScreen(
 internal fun AvisosScreenPreview() {
     SegurosBpoTheme {
         AvisosScreen(
-            avisos = Muestras.avisos,
+            avisos = Muestras.avisosApi,
             onCargar = {},
             onMarcarLeido = {},
             onAbrirCaso = {},
@@ -110,3 +117,5 @@ internal fun AvisosScreenPreview() {
         )
     }
 }
+
+private const val PIDEN_DOCUMENTO = "Te piden un documento: "

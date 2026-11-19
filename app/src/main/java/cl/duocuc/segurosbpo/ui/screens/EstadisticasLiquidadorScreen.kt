@@ -15,9 +15,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import cl.duocuc.segurosbpo.model.EtapaSiniestro
-import cl.duocuc.segurosbpo.model.Liquidador
-import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.data.remote.SiniestroResponse
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.ResumenGraficosCasos
 import cl.duocuc.segurosbpo.ui.theme.Dimens
@@ -28,13 +26,13 @@ import androidx.compose.ui.tooling.preview.Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EstadisticasLiquidadorScreen(
-    liquidador: Liquidador,
+    equipo: String,
     responsable: String,
-    casos: List<Siniestro>,
-    disponibles: List<Siniestro>,
-    seguimientosVencidos: Set<Long>
+    casos: List<SiniestroResponse>,
+    disponibles: List<SiniestroResponse>,
+    seguimientosVencidos: Set<String>
 ) {
-    val cerrados = casos.count { it.etapa == EtapaSiniestro.CERRADO }
+    val cerrados = casos.count { it.etapa == "CERRADO" }
     val activos = casos.size - cerrados
 
     Scaffold(topBar = { BarraSuperior("Estadísticas") }) { margen ->
@@ -43,7 +41,7 @@ fun EstadisticasLiquidadorScreen(
                 .padding(Dimens.espacioMedio),
             verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
         ) {
-            Text("Equipo de " + liquidador.equipo, style = MaterialTheme.typography.titleLarge)
+            Text("Equipo de " + equipo, style = MaterialTheme.typography.titleLarge)
             Text("Responsable: " + responsable)
 
             Card(modifier = Modifier.fillMaxWidth()) {
@@ -59,7 +57,7 @@ fun EstadisticasLiquidadorScreen(
                 }
             }
 
-            ResumenGraficosCasos(casos = casos, equipo = liquidador.equipo)
+            ResumenGraficosCasos(casos = casos, equipo = equipo)
         }
     }
 }
@@ -77,11 +75,11 @@ private fun Indicador(etiqueta: String, valor: Int) {
 internal fun EstadisticasLiquidadorScreenPreview() {
     SegurosBpoTheme {
         EstadisticasLiquidadorScreen(
-            liquidador = Liquidador.VEHICULOS,
+            equipo = "VEHICULOS",
             responsable = "Maria P. Lagos",
-            casos = Muestras.siniestros,
-            disponibles = listOf(Muestras.siniestroRecibido),
-            seguimientosVencidos = setOf(1L)
+            casos = Muestras.siniestrosApi,
+            disponibles = Muestras.siniestrosApi,
+            seguimientosVencidos = setOf("1")
         )
     }
 }

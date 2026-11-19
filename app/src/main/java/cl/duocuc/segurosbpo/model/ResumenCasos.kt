@@ -1,6 +1,7 @@
 package cl.duocuc.segurosbpo.model
 
 import androidx.compose.runtime.Immutable
+import cl.duocuc.segurosbpo.data.remote.SiniestroResponse
 
 @Immutable
 data class ResumenCasos(
@@ -13,11 +14,11 @@ data class ResumenCasos(
     val abiertos: Int get() = total - cerrados
 
     companion object {
-        fun desde(casos: List<Siniestro>): ResumenCasos = ResumenCasos(
-            recibidos = casos.count { it.etapa == EtapaSiniestro.RECIBIDO },
-            evaluacion = casos.count { it.etapa == EtapaSiniestro.EVALUACION },
-            liquidacion = casos.count { it.etapa == EtapaSiniestro.LIQUIDACION },
-            cerrados = casos.count { it.etapa == EtapaSiniestro.CERRADO }
+        fun desde(casos: List<SiniestroResponse>): ResumenCasos = ResumenCasos(
+            recibidos = casos.count { it.etapa == "RECIBIDO" },
+            evaluacion = casos.count { it.etapa == "EVALUACION" },
+            liquidacion = casos.count { it.etapa == "LIQUIDACION" },
+            cerrados = casos.count { it.etapa == "CERRADO" }
         )
     }
 }

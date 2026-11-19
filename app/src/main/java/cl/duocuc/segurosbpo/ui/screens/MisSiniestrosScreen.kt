@@ -33,8 +33,7 @@ import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 import cl.duocuc.segurosbpo.ui.components.AvatarCuenta
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import cl.duocuc.segurosbpo.ui.components.EtiquetaInteres
-import cl.duocuc.segurosbpo.model.Asegurado
-import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.data.remote.SiniestroResponse
 import cl.duocuc.segurosbpo.model.ValidadorRut
 import cl.duocuc.segurosbpo.model.ValidadorSiniestro
 import cl.duocuc.segurosbpo.ui.theme.Dimens
@@ -42,14 +41,15 @@ import cl.duocuc.segurosbpo.ui.theme.Dimens
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MisSiniestrosScreen(
-    asegurado: Asegurado,
+    nombreAsegurado: String,
+    rutAsegurado: String,
     fotoCuenta: ByteArray?,
     avatarUrl: String? = null,
     actualizadoEn: String,
-    siniestros: List<Siniestro>,
+    siniestros: List<SiniestroResponse>,
     busqueda: String,
     onBuscar: (String) -> Unit,
-    onVerDetalle: (Long) -> Unit,
+    onVerDetalle: (String) -> Unit,
     onNuevoReporte: () -> Unit
 ) {
     Scaffold(
@@ -82,9 +82,9 @@ fun MisSiniestrosScreen(
                     avatarUrl = avatarUrl
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(Dimens.espacioMini)) {
-                    Text(stringResource(R.string.etiqueta_asegurado_actual, asegurado.etiqueta))
+                    Text(stringResource(R.string.etiqueta_asegurado_actual, nombreAsegurado))
                     Text(
-                        stringResource(R.string.etiqueta_rut, ValidadorRut.ocultar(asegurado.rut)),
+                        stringResource(R.string.etiqueta_rut, ValidadorRut.ocultar(rutAsegurado)),
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
@@ -125,11 +125,11 @@ fun MisSiniestrosScreen(
                         Card(onClick = { onVerDetalle(siniestro.id) }, modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(Dimens.espacioMedio), verticalArrangement = Arrangement.spacedBy(Dimens.espacioApretado)) {
                                 CodigoSiniestro(siniestro.numero)
-                                Text(siniestro.compania.etiqueta)
-                                Text(siniestro.tipo.etiqueta)
+                                Text(siniestro.companiaNombre ?: siniestro.companiaCodigo)
+                                Text(siniestro.tipoNombre ?: siniestro.tipoCodigo)
                                 EtiquetaInteres(
                                     texto = stringResource(
-                                        R.string.etiqueta_estado, siniestro.etapa.etiqueta
+                                        R.string.etiqueta_estado, etiquetaEtapa(siniestro.etapa)
                                     )
                                 )
                                 if (ValidadorSiniestro.reporteFueraDePlazo(
@@ -162,10 +162,11 @@ fun MisSiniestrosScreen(
 internal fun MisSiniestrosScreenPreview() {
     SegurosBpoTheme {
         MisSiniestrosScreen(
-            asegurado = Asegurado.CAMILA,
+            nombreAsegurado = "Camila Rojas Fuentes",
+            rutAsegurado = "15.842.371-5",
             fotoCuenta = null,
             actualizadoEn = Muestras.FECHA_HORA,
-            siniestros = Muestras.siniestros,
+            siniestros = Muestras.siniestrosApi,
             busqueda = "",
             onBuscar = {},
             onVerDetalle = {},
@@ -179,7 +180,8 @@ internal fun MisSiniestrosScreenPreview() {
 internal fun MisSiniestrosVacioPreview() {
     SegurosBpoTheme {
         MisSiniestrosScreen(
-            asegurado = Asegurado.CAMILA,
+            nombreAsegurado = "Camila Rojas Fuentes",
+            rutAsegurado = "15.842.371-5",
             fotoCuenta = null,
             actualizadoEn = Muestras.FECHA_HORA,
             siniestros = emptyList(),
@@ -189,4 +191,12 @@ internal fun MisSiniestrosVacioPreview() {
             onNuevoReporte = {}
         )
     }
+}
+
+private fun etiquetaEtapa(etapa: String): String = when (etapa) {
+    "RECIBIDO" -> "Recibido"
+    "EVALUACION" -> "En evaluación"
+    "LIQUIDACION" -> "En liquidación"
+    "CERRADO" -> "Cerrado"
+    else -> etapa
 }

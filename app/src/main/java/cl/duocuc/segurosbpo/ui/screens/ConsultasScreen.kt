@@ -27,9 +27,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import cl.duocuc.segurosbpo.model.Consulta
-import cl.duocuc.segurosbpo.model.EtapaSiniestro
-import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.data.remote.ConsultaResponse
+import cl.duocuc.segurosbpo.data.remote.SiniestroResponse
 import cl.duocuc.segurosbpo.model.ValidadorConsulta
 import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
@@ -43,10 +42,12 @@ import androidx.compose.ui.tooling.preview.Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConsultasScreen(
-    siniestro: Siniestro?,
-    consultas: List<Consulta>,
+    siniestro: SiniestroResponse?,
+    consultas: List<ConsultaResponse>,
+    puedeResponder: Boolean,
     onCargar: () -> Unit,
-    onEnviar: (String) -> String?,
+    onEnviar: (String) -> Unit,
+    onResponder: (String, String) -> Unit,
     onVolver: () -> Unit
 ) {
     val aviso = remember { SnackbarHostState() }
@@ -74,7 +75,7 @@ fun ConsultasScreen(
 
             CodigoSiniestro(siniestro.numero, estilo = MaterialTheme.typography.titleLarge)
 
-            if (siniestro.etapa == EtapaSiniestro.CERRADO) {
+            if (siniestro.etapa == "CERRADO") {
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(Dimens.espacioMedio)) {
                         Text("El caso está cerrado y ya no admite nuevas consultas.")
@@ -106,14 +107,9 @@ fun ConsultasScreen(
                             modifier = Modifier.fillMaxWidth(),
                             enabled = error == null,
                             onClick = {
-                                val resultado = onEnviar(pregunta)
-                                scope.launch {
-                                    aviso.showSnackbar(resultado ?: "Consulta enviada")
-                                }
-                                if (resultado == null) {
-                                    pregunta = ""
-                                    tocado = false
-                                }
+                                onEnviar(pregunta)
+                                pregunta = ""
+                                tocado = false
                             }
                         ) { Text("Enviar consulta") }
                     }
@@ -139,13 +135,30 @@ fun ConsultasScreen(
                             style = MaterialTheme.typography.bodySmall
                         )
                         HorizontalDivider()
-                        if (consulta.respondida) {
+                        if (!consulta.respuesta.isNullOrBlank()) {
                             Text("Respuesta", style = MaterialTheme.typography.titleSmall)
                             Text(consulta.respuesta.orEmpty())
                             Text(
                                 "Respondida: " + consulta.fechaRespuesta.orEmpty(),
                                 style = MaterialTheme.typography.bodySmall
                             )
+                        } else if (puedeResponder) {
+                            var respuesta by rememberSaveable(consulta.id) { mutableStateOf("") }
+                            OutlinedTextField(
+                                value = respuesta,
+                                onValueChange = { respuesta = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("Escribe la respuesta") },
+                                minLines = 2
+                            )
+                            Button(
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = respuesta.trim().length >= 5,
+                                onClick = {
+                                    onResponder(consulta.id, respuesta)
+                                    respuesta = ""
+                                }
+                            ) { Text("Responder") }
                         } else {
                             Text(
                                 "En espera de respuesta del equipo liquidador",
@@ -167,10 +180,12 @@ fun ConsultasScreen(
 internal fun ConsultasScreenPreview() {
     SegurosBpoTheme {
         ConsultasScreen(
-            siniestro = Muestras.siniestroEnEvaluacion,
-            consultas = Muestras.consultas,
+            siniestro = Muestras.siniestrosApi.first(),
+            consultas = Muestras.consultasApi,
+            puedeResponder = false,
             onCargar = {},
-            onEnviar = { null },
+            onEnviar = {},
+            onResponder = { _, _ -> },
             onVolver = {}
         )
     }

@@ -37,6 +37,41 @@ data class TipoSiniestroResponse(
     val documentos: List<String>
 )
 
+data class RegistroRequest(
+    val nombre: String,
+    val correo: String,
+    val contrasena: String,
+    val rut: String,
+    val equipo: String? = null,
+    val rolId: String? = null,
+    val pregunta: String? = null,
+    val respuesta: String? = null
+)
+
+data class PreguntaResponse(
+    val correo: String,
+    val pregunta: String
+)
+
+data class RecuperarRequest(
+    val correo: String,
+    val respuesta: String,
+    val nueva: String
+)
+
+data class ActualizarUsuarioRequest(
+    val nombre: String,
+    val correo: String,
+    val rut: String,
+    val equipo: String? = null,
+    val rolId: String? = null
+)
+
+data class CambiarContrasenaRequest(
+    val actual: String,
+    val nueva: String
+)
+
 data class RegionResponse(
     val id: String,
     val codigo: String,
@@ -110,6 +145,14 @@ data class SiniestroResponse(
     val ultimaActualizacion: String
 )
 
+data class CargaLiquidadorResponse(
+    val liquidadorId: String,
+    val liquidadorNombre: String,
+    val equipo: String,
+    val abiertos: Int,
+    val cerrados: Int
+)
+
 data class GestionResponse(
     val id: String,
     val siniestroId: String,
@@ -129,4 +172,60 @@ data class EvidenciaResponse(
     val fechaRegistro: String,
     val subidoPor: String,
     val archivoUrl: String
+)
+
+data class AvisoResponse(
+    val id: String,
+    val siniestroId: String,
+    val numero: String,
+    val destinatarioId: String,
+    val mensaje: String,
+    val fecha: String,
+    val leido: Boolean
+)
+
+data class SolicitudResponse(
+    val id: String,
+    val siniestroId: String,
+    val tipoDocumento: String,
+    val comentario: String?,
+    val solicitadoPor: String?,
+    val fecha: String,
+    val estado: String
+)
+
+data class SolicitudRequest(
+    val tipoDocumento: String,
+    val comentario: String,
+    val solicitadoPor: String
+)
+
+data class ConsultaResponse(
+    val id: String,
+    val siniestroId: String,
+    val pregunta: String,
+    val respuesta: String?,
+    val fechaPregunta: String,
+    val fechaRespuesta: String?
+)
+
+data class ConsultaRequest(
+    val texto: String
+)
+
+data class EvaluacionResponse(
+    val id: String,
+    val siniestroId: String,
+    val nota: Int,
+    val comentario: String?,
+    val fecha: String
+)
+
+data class EvaluacionRequest(
+    val nota: Int,
+    val comentario: String
+)
+
+data class MotivoRequest(
+    val texto: String
 )

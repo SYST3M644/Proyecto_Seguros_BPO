@@ -35,6 +35,18 @@ object ValidadorRut {
         else -> null
     }
 
+    fun formatear(rut: String): String {
+        val limpio = normalizar(rut).filter { it.isDigit() || it == 'K' }.take(9)
+        if (limpio.length < 2) return limpio
+        val cuerpo = limpio.dropLast(1)
+        val verificador = limpio.last()
+        val conPuntos = cuerpo.reversed()
+            .chunked(3)
+            .joinToString(".")
+            .reversed()
+        return conPuntos + "-" + verificador
+    }
+
     fun ocultar(rut: String): String {
         val limpio = normalizar(rut)
         if (limpio.length < 5) return "***"

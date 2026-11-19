@@ -10,197 +10,314 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cl.duocuc.segurosbpo.R
-import cl.duocuc.segurosbpo.model.EtapaSiniestro
-import cl.duocuc.segurosbpo.model.Liquidador
-import cl.duocuc.segurosbpo.model.Siniestro
-import cl.duocuc.segurosbpo.model.coincideCon
 import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
-import cl.duocuc.segurosbpo.ui.components.BuscadorCasos
-import cl.duocuc.segurosbpo.ui.components.FiltroEtapas
-import androidx.compose.ui.tooling.preview.Preview
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
-import cl.duocuc.segurosbpo.ui.preview.Muestras
-import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import cl.duocuc.segurosbpo.ui.components.BotonPrincipal
+import cl.duocuc.segurosbpo.ui.components.BotonSecundario
+import cl.duocuc.segurosbpo.ui.components.BuscadorCasos
+import cl.duocuc.segurosbpo.ui.components.CampoDesplegable
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
-import kotlinx.coroutines.launch
+import cl.duocuc.segurosbpo.ui.components.EtiquetaInteres
 import cl.duocuc.segurosbpo.ui.theme.Dimens
+import cl.duocuc.segurosbpo.viewmodel.SiniestrosViewModel
+
+private val RESULTADOS = listOf("Aprobado", "Aprobado con descuento", "Rechazado")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CasosLiquidadorScreen(
-    liquidador: Liquidador,
+    liquidadorId: String,
     responsable: String,
-    casos: List<Siniestro>,
-    archivados: List<Siniestro>,
-    seguimientosVencidos: Set<Long>,
-    novedades: Map<Long, Int>,
-    onCargarArchivados: () -> Unit,
-    onArchivar: (Long) -> String?,
-    onRestaurar: (Long) -> String?,
-    onGestionar: (Long) -> Unit
+    viewModel: SiniestrosViewModel
 ) {
+    val casos by viewModel.siniestros.collectAsStateWithLifecycle()
+    val gestiones by viewModel.gestiones.collectAsStateWithLifecycle()
+    val solicitudes by viewModel.solicitudes.collectAsStateWithLifecycle()
+    val cargando by viewModel.cargando.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
+    val mensaje by viewModel.aviso.collectAsStateWithLifecycle()
     val aviso = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    var viendoArchivados by rememberSaveable(liquidador) { mutableStateOf(false) }
-    var busqueda by rememberSaveable(liquidador) { mutableStateOf("") }
-    var etapaFiltro by rememberSaveable(liquidador) { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(liquidador) { onCargarArchivados() }
+    var busqueda by rememberSaveable { mutableStateOf("") }
+    var abierto by rememberSaveable { mutableStateOf("") }
+    var descripcion by rememberSaveable { mutableStateOf("") }
+    var visibleAsegurado by rememberSaveable { mutableStateOf(true) }
+    var resultado by rememberSaveable { mutableStateOf(RESULTADOS.first()) }
+    var mensajeCierre by rememberSaveable { mutableStateOf("") }
+    var documentoPedido by rememberSaveable { mutableStateOf("") }
 
-    fun mostrar(mensaje: String) {
-        scope.launch { aviso.showSnackbar(mensaje) }
+    LaunchedEffect(liquidadorId) {
+        if (liquidadorId.isNotBlank()) viewModel.cargarDeLiquidador(liquidadorId)
+    }
+
+    LaunchedEffect(mensaje) {
+        mensaje?.let {
+            aviso.showSnackbar(it)
+            viewModel.limpiarAviso()
+        }
+    }
+
+    val visibles = remember(casos, busqueda) {
+        val texto = busqueda.trim().lowercase()
+        if (texto.isEmpty()) casos
+        else casos.filter { caso ->
+            listOfNotNull(caso.numero, caso.tipoNombre, caso.comuna, caso.aseguradoNombre)
+                .any { it.lowercase().contains(texto) }
+        }
     }
 
     Scaffold(
-        topBar = { BarraSuperior("Mis casos") }
+        topBar = { BarraSuperior(stringResource(R.string.titulo_casos_liquidador)) }
     ) { margen ->
         Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
-        Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                .padding(Dimens.espacioMedio),
-            verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
-        ) {
-            Text("Equipo de " + liquidador.equipo, style = MaterialTheme.typography.titleLarge)
-            Text("Responsable: " + responsable, style = MaterialTheme.typography.bodySmall)
-
-            val base = if (viendoArchivados) archivados else casos
-            val etapasPresentes = EtapaSiniestro.entries.filter { etapa ->
-                base.any { it.etapa == etapa }
-            }
-
-            BuscadorCasos(texto = busqueda, onTexto = { busqueda = it })
-            FiltroEtapas(
-                etapas = etapasPresentes,
-                seleccionada = etapaFiltro?.let { nombre ->
-                    etapasPresentes.firstOrNull { it.name == nombre }
-                },
-                onSeleccionar = { etapaFiltro = it?.name }
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                    .padding(Dimens.espacioMedio),
+                verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
             ) {
-                if (archivados.isNotEmpty()) {
-                    FilterChip(
-                        selected = viendoArchivados,
-                        onClick = {
-                            viendoArchivados = !viendoArchivados
-                            etapaFiltro = null
-                        },
-                        label = { Text("Archivados (" + archivados.size + ")") }
-                    )
+                if (cargando) {
+                    CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
                 }
-            }
 
-            val visibles = base
-                .filter { it.coincideCon(busqueda) }
-                .filter { etapaFiltro == null || it.etapa.name == etapaFiltro }
-
-            Text(
-                "Mostrando " + visibles.size + " de " + base.size + " caso(s)",
-                style = MaterialTheme.typography.bodySmall
-            )
-
-            if (visibles.isEmpty()) {
-                Text(
-                    when {
-                        base.isEmpty() && viendoArchivados -> "No hay casos archivados."
-                        base.isEmpty() -> "No hay casos activos en el equipo."
-                        else -> "Ningún caso coincide con la búsqueda o el filtro."
-                    }
-                )
-            }
-            visibles.forEach { siniestro ->
-                Card(
-                    onClick = { onGestionar(siniestro.id) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        Modifier.padding(Dimens.espacioTarjeta),
-                        verticalArrangement = Arrangement.spacedBy(Dimens.espacioMini)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                error?.let { texto ->
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(
+                            Modifier.padding(Dimens.espacioMedio),
+                            verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
                         ) {
-                            CodigoSiniestro(siniestro.numero)
-                            val nuevas = novedades[siniestro.id] ?: 0
-                            if (nuevas > 0) {
-                                BadgedBox(badge = { Badge { Text(nuevas.toString()) } }) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.ic_avisos),
-                                        contentDescription = nuevas.toString() +
-                                            " novedad(es) del asegurado",
-                                        tint = MaterialTheme.colorScheme.primary
+                            Text(texto, color = MaterialTheme.colorScheme.error)
+                            BotonSecundario(
+                                texto = stringResource(R.string.btn_reintentar),
+                                onClick = {
+                                    viewModel.limpiarError()
+                                    viewModel.cargarDeLiquidador(liquidadorId)
+                                }
+                            )
+                        }
+                    }
+                }
+
+                BuscadorCasos(busqueda) { busqueda = it }
+
+                if (!cargando && error == null && visibles.isEmpty()) {
+                    Text(stringResource(R.string.vacio_casos_liquidador))
+                }
+
+                visibles.forEach { caso ->
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(
+                            Modifier.padding(Dimens.espacioMedio),
+                            verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
+                        ) {
+                            CodigoSiniestro(caso.numero)
+                            Text(caso.tipoNombre ?: caso.tipoCodigo)
+                            Text(
+                                caso.aseguradoNombre.orEmpty(),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                caso.comuna + " · " + caso.fechaOcurrencia,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            EtiquetaInteres(texto = etiquetaDeEtapa(caso.etapa))
+
+                            BotonSecundario(
+                                texto = if (abierto == caso.id) {
+                                    stringResource(R.string.btn_cerrar_gestion)
+                                } else {
+                                    stringResource(R.string.btn_gestionar_caso)
+                                },
+                                onClick = {
+                                    abierto = if (abierto == caso.id) "" else caso.id
+                                    descripcion = ""
+                                    mensajeCierre = ""
+                                    if (abierto.isNotBlank()) {
+                                        viewModel.cargarGestiones(caso.id)
+                                        viewModel.cargarSolicitudes(caso.id)
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            if (abierto == caso.id) {
+                                HorizontalDivider()
+
+                                Text(
+                                    stringResource(R.string.etiqueta_historial),
+                                    style = MaterialTheme.typography.titleSmall
+                                )
+                                if (gestiones.isEmpty()) {
+                                    Text(
+                                        stringResource(R.string.vacio_historial),
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                                gestiones.forEach { gestion ->
+                                    Text(
+                                        gestion.fecha + " · " + gestion.responsable,
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                    Text(
+                                        gestion.descripcion,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+
+                                HorizontalDivider()
+
+                                OutlinedTextField(
+                                    value = descripcion,
+                                    onValueChange = { descripcion = it },
+                                    label = {
+                                        Text(stringResource(R.string.campo_gestion))
+                                    },
+                                    minLines = 2,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Checkbox(
+                                        checked = visibleAsegurado,
+                                        onCheckedChange = { visibleAsegurado = it }
+                                    )
+                                    Text(stringResource(R.string.opcion_visible_asegurado))
+                                }
+                                BotonSecundario(
+                                    texto = stringResource(R.string.btn_registrar_gestion),
+                                    onClick = {
+                                        viewModel.agregarGestion(
+                                            caso.id, responsable, descripcion, visibleAsegurado
+                                        )
+                                        descripcion = ""
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+
+                                HorizontalDivider()
+
+                                Text(
+                                    stringResource(R.string.etiqueta_documentos_pedidos),
+                                    style = MaterialTheme.typography.titleSmall
+                                )
+                                solicitudes.forEach { solicitud ->
+                                    Row(
+                                        Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement =
+                                            Arrangement.spacedBy(Dimens.espacioChico)
+                                    ) {
+                                        Text(
+                                            solicitud.tipoDocumento + " · " + solicitud.estado,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        if (solicitud.estado == "PENDIENTE") {
+                                            BotonSecundario(
+                                                texto = stringResource(R.string.btn_anular),
+                                                onClick = {
+                                                    viewModel.anularSolicitud(
+                                                        solicitud.id, caso.id
+                                                    )
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                                OutlinedTextField(
+                                    value = documentoPedido,
+                                    onValueChange = { documentoPedido = it },
+                                    label = {
+                                        Text(stringResource(R.string.campo_documento_pedido))
+                                    },
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                BotonSecundario(
+                                    texto = stringResource(R.string.btn_pedir_documento),
+                                    onClick = {
+                                        viewModel.solicitarDocumento(
+                                            caso.id, documentoPedido, "", responsable
+                                        )
+                                        documentoPedido = ""
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+
+                                HorizontalDivider()
+
+                                if (caso.etapa == "LIQUIDACION") {
+                                    CampoDesplegable(
+                                        etiqueta = stringResource(R.string.campo_resultado),
+                                        seleccionado = resultado,
+                                        opciones = RESULTADOS,
+                                        onElegir = { resultado = it }
+                                    )
+                                    OutlinedTextField(
+                                        value = mensajeCierre,
+                                        onValueChange = { mensajeCierre = it },
+                                        label = {
+                                            Text(stringResource(R.string.campo_mensaje_cierre))
+                                        },
+                                        minLines = 2,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+
+                                if (caso.etapa != "CERRADO") {
+                                    BotonPrincipal(
+                                        texto = textoAvanzar(caso.etapa),
+                                        onClick = {
+                                            viewModel.avanzar(caso.id, resultado, mensajeCierre)
+                                            viewModel.cargarDeLiquidador(liquidadorId)
+                                        },
+                                        icono = R.drawable.ic_seguir,
+                                        habilitado = caso.etapa != "LIQUIDACION" ||
+                                            mensajeCierre.isNotBlank(),
+                                        modifier = Modifier.fillMaxWidth()
                                     )
                                 }
                             }
                         }
-                        Text(siniestro.tipo.etiqueta)
-                        Text(
-                            "Etapa: " + siniestro.etapa.etiqueta,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        if (siniestro.id in seguimientosVencidos) {
-                            Text(
-                                "Seguimiento pendiente",
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                        if (viendoArchivados) {
-                            TextButton(onClick = {
-                                mostrar(onRestaurar(siniestro.id) ?: "Caso restaurado")
-                            }) { Text("Restaurar") }
-                        } else if (siniestro.etapa == EtapaSiniestro.CERRADO) {
-                            TextButton(onClick = {
-                                mostrar(onArchivar(siniestro.id) ?: "Caso archivado")
-                            }) { Text("Archivar") }
-                        }
                     }
                 }
             }
-        }
-        AvisoSuperior(aviso)
+            AvisoSuperior(aviso)
         }
     }
 }
 
-@Preview(showBackground = true, heightDp = 720)
-@Composable
-internal fun CasosLiquidadorScreenPreview() {
-    SegurosBpoTheme {
-        CasosLiquidadorScreen(
-            liquidador = Liquidador.VEHICULOS,
-            responsable = "María P. Lagos",
-            casos = Muestras.siniestros,
-            archivados = emptyList(),
-            seguimientosVencidos = setOf(1L),
-            novedades = mapOf(1L to 2),
-            onCargarArchivados = {},
-            onArchivar = { null },
-            onRestaurar = { null },
-            onGestionar = {}
-        )
-    }
+private fun etiquetaDeEtapa(etapa: String): String = when (etapa) {
+    "RECIBIDO" -> "Recibido"
+    "EVALUACION" -> "En evaluación"
+    "LIQUIDACION" -> "En liquidación"
+    "CERRADO" -> "Cerrado"
+    else -> etapa
+}
+
+private fun textoAvanzar(etapa: String): String = when (etapa) {
+    "RECIBIDO" -> "Pasar a evaluación"
+    "EVALUACION" -> "Pasar a liquidación"
+    "LIQUIDACION" -> "Cerrar el caso"
+    else -> "Avanzar"
 }

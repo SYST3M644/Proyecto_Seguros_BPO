@@ -14,28 +14,20 @@ sealed class Ruta(val ruta: String) {
     data object CargaEquipos : Ruta("carga_equipos")
     data object Liquidadores : Ruta("liquidadores")
     data object Catalogo : Ruta("catalogo")
-    data object SiniestrosApi : Ruta("siniestros_api")
-    data object ReportarLocal : Ruta("reportar_local")
-    data object AnalistaLocal : Ruta("analista_local")
-    data object DocumentosLiquidador : Ruta("documentos_liquidador/{id}") {
-        fun crear(id: Long) = "documentos_liquidador/$id"
-    }
-    data object GestionCaso : Ruta("gestion_caso/{id}") {
-        fun crear(id: Long) = "gestion_caso/$id"
-    }
+    data object Siniestros : Ruta("siniestros")
     data object Detalle : Ruta("detalle/{id}") {
-        fun crear(id: Long) = "detalle/$id"
+        fun crear(id: String) = "detalle/$id"
     }
     data object Historial : Ruta("historial/{id}") {
-        fun crear(id: Long) = "historial/$id"
+        fun crear(id: String) = "historial/$id"
     }
     data object Evidencias : Ruta("evidencias/{id}") {
-        fun crear(id: Long) = "evidencias/$id"
+        fun crear(id: String) = "evidencias/$id"
     }
     data object Consultas : Ruta("consultas/{id}") {
-        fun crear(id: Long) = "consultas/$id"
+        fun crear(id: String) = "consultas/$id"
     }
     data object Editar : Ruta("editar/{id}") {
-        fun crear(id: Long) = "editar/$id"
+        fun crear(id: String) = "editar/$id"
     }
 }

@@ -37,11 +37,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.model.ControlPlazos
-import cl.duocuc.segurosbpo.model.EtapaSiniestro
-import cl.duocuc.segurosbpo.model.EvaluacionCierre
-import cl.duocuc.segurosbpo.model.Siniestro
-import cl.duocuc.segurosbpo.model.SolicitudDocumento
-import cl.duocuc.segurosbpo.model.ValidadorDesistimiento
+import cl.duocuc.segurosbpo.data.remote.EvaluacionResponse
+import cl.duocuc.segurosbpo.data.remote.SiniestroResponse
+import cl.duocuc.segurosbpo.data.remote.SolicitudResponse
 import cl.duocuc.segurosbpo.model.ValidadorEvaluacion
 import cl.duocuc.segurosbpo.model.ValidadorSiniestro
 import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
@@ -56,18 +54,19 @@ import androidx.compose.ui.tooling.preview.Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetalleSiniestroScreen(
-    siniestro: Siniestro?,
-    solicitudes: List<SolicitudDocumento>,
+    siniestro: SiniestroResponse?,
+    solicitudes: List<SolicitudResponse>,
     consultasPendientes: Int,
-    evaluacion: EvaluacionCierre?,
+    evaluacion: EvaluacionResponse?,
+    documentosDelTipo: List<String>,
     onCargarSolicitudes: () -> Unit,
     onVolver: () -> Unit,
     onEditar: () -> Unit,
     onEvidencias: () -> Unit,
     onHistorial: () -> Unit,
     onConsultas: () -> Unit,
-    onDesistir: (String) -> String?,
-    onGuardarEvaluacion: (Int, String) -> String?
+    onDesistir: (String) -> Unit,
+    onGuardarEvaluacion: (Int, String) -> Unit
 ) {
     val textos = LocalContext.current
     val aviso = remember { SnackbarHostState() }
@@ -82,7 +81,7 @@ fun DetalleSiniestroScreen(
     }
 
     if (pidiendoDesistir && siniestro != null) {
-        val error = ValidadorDesistimiento.error(siniestro.etapa, motivoDesistir)
+        val error = if (motivoDesistir.trim().length < 5) "Escribe el motivo, mínimo 5 caracteres" else null
         AlertDialog(
             onDismissRequest = { pidiendoDesistir = false },
             title = { Text(stringResource(R.string.titulo_desistir)) },
@@ -104,14 +103,9 @@ fun DetalleSiniestroScreen(
                 TextButton(
                     enabled = error == null,
                     onClick = {
-                        val resultado = onDesistir(motivoDesistir)
+                        onDesistir(motivoDesistir)
                         pidiendoDesistir = false
-                        if (resultado == null) motivoDesistir = ""
-                        scope.launch {
-                            aviso.showSnackbar(
-                                resultado ?: textos.getString(R.string.msg_desistimiento_ok)
-                            )
-                        }
+                        motivoDesistir = ""
                     }
                 ) { Text(stringResource(R.string.btn_confirmar)) }
             },
@@ -137,25 +131,28 @@ fun DetalleSiniestroScreen(
                 return@Column
             }
 
-            val pendientes = solicitudes.filter { it.pendiente }
-            val cerrado = siniestro.etapa == EtapaSiniestro.CERRADO
+            val pendientes = solicitudes.filter { it.estado == "PENDIENTE" }
+            val cerrado = siniestro.etapa == "CERRADO"
             val plazo = ControlPlazos.resumenEtapa(
                 siniestro.ultimaActualizacion,
-                siniestro.compania.plazoDiasHabiles
+                siniestro.plazoDiasHabiles ?: 0
             )
 
             CodigoSiniestro(siniestro.numero, estilo = MaterialTheme.typography.headlineSmall)
 
             BloqueDetalle(stringResource(R.string.seccion_estado_caso)) {
-                DatoDetalle(stringResource(R.string.dato_etapa), siniestro.etapa.etiqueta)
-                DatoDetalle(stringResource(R.string.dato_compania), siniestro.compania.etiqueta)
-                DatoDetalle(stringResource(R.string.dato_tipo), siniestro.tipo.etiqueta)
+                DatoDetalle(stringResource(R.string.dato_etapa), etiquetaEtapa(siniestro.etapa))
+                DatoDetalle(
+                    stringResource(R.string.dato_compania),
+                    siniestro.companiaNombre ?: siniestro.companiaCodigo
+                )
+                DatoDetalle(
+                    stringResource(R.string.dato_tipo),
+                    siniestro.tipoNombre ?: siniestro.tipoCodigo
+                )
                 DatoDetalle(
                     stringResource(R.string.dato_liquidador),
                     siniestro.liquidadorNombre
-                        ?: siniestro.liquidadorAsignado?.let {
-                            stringResource(R.string.estado_equipo_por_asignar, it.equipo)
-                        }
                         ?: stringResource(R.string.estado_pendiente_asignacion)
                 )
                 DatoDetalle(
@@ -186,7 +183,8 @@ fun DetalleSiniestroScreen(
                     Text(
                         if (plazo.excedido)
                             stringResource(
-                                R.string.aviso_plazo_excedido, siniestro.compania.etiqueta
+                                R.string.aviso_plazo_excedido,
+                                siniestro.companiaNombre.orEmpty()
                             )
                         else stringResource(
                             R.string.aviso_plazo_restante, plazo.diasRestantes
@@ -232,7 +230,7 @@ fun DetalleSiniestroScreen(
                     )
                     pendientes.forEach { solicitud ->
                         Text(
-                            stringResource(R.string.item_lista, solicitud.tipo),
+                            stringResource(R.string.item_lista, solicitud.tipoDocumento),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -241,20 +239,16 @@ fun DetalleSiniestroScreen(
                     if (pendientes.isNotEmpty())
                         stringResource(R.string.paso_adjunta_documentos)
                     else when (siniestro.etapa) {
-                        EtapaSiniestro.RECIBIDO ->
-                            stringResource(R.string.proximo_paso_recibido)
-                        EtapaSiniestro.EVALUACION ->
-                            stringResource(R.string.paso_evaluacion)
-                        EtapaSiniestro.LIQUIDACION ->
-                            stringResource(R.string.paso_liquidacion)
-                        EtapaSiniestro.CERRADO ->
-                            stringResource(R.string.paso_cerrado)
+                        "RECIBIDO" -> stringResource(R.string.proximo_paso_recibido)
+                        "EVALUACION" -> stringResource(R.string.paso_evaluacion)
+                        "LIQUIDACION" -> stringResource(R.string.paso_liquidacion)
+                        else -> stringResource(R.string.paso_cerrado)
                     }
                 )
             }
 
             BloqueDetalle(stringResource(R.string.seccion_documentos_habituales)) {
-                siniestro.tipo.documentosHabituales.forEach { documento ->
+                documentosDelTipo.forEach { documento ->
                     Text(
                         stringResource(R.string.item_lista, documento),
                         style = MaterialTheme.typography.bodyMedium
@@ -319,17 +313,7 @@ fun DetalleSiniestroScreen(
                         Button(
                             modifier = Modifier.fillMaxWidth(),
                             enabled = ValidadorEvaluacion.error(nota, comentario) == null,
-                            onClick = {
-                                val error = onGuardarEvaluacion(nota, comentario)
-                                scope.launch {
-                                    aviso.showSnackbar(
-                                        error
-                                            ?: textos.getString(
-                                                R.string.msg_gracias_evaluacion
-                                            )
-                                    )
-                                }
-                            }
+                            onClick = { onGuardarEvaluacion(nota, comentario) }
                         ) { Text(stringResource(R.string.btn_enviar_evaluacion)) }
                     }
                 }
@@ -356,7 +340,7 @@ fun DetalleSiniestroScreen(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onHistorial
                 ) { Text(stringResource(R.string.btn_historial)) }
-                if (siniestro.etapa == EtapaSiniestro.RECIBIDO) {
+                if (siniestro.etapa == "RECIBIDO") {
                     OutlinedButton(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = onEditar
@@ -409,18 +393,19 @@ private fun DatoDetalle(etiqueta: String, valor: String) {
 internal fun DetalleSiniestroScreenPreview() {
     SegurosBpoTheme {
         DetalleSiniestroScreen(
-            siniestro = Muestras.siniestroEnEvaluacion,
-            solicitudes = Muestras.solicitudes,
+            siniestro = Muestras.siniestrosApi.first(),
+            solicitudes = Muestras.solicitudesApi,
             consultasPendientes = 1,
             evaluacion = null,
+            documentosDelTipo = listOf("Fotografías de los daños", "Constancia policial"),
             onCargarSolicitudes = {},
             onVolver = {},
             onEditar = {},
             onEvidencias = {},
             onHistorial = {},
             onConsultas = {},
-            onDesistir = { null },
-            onGuardarEvaluacion = { _, _ -> null }
+            onDesistir = {},
+            onGuardarEvaluacion = { _, _ -> }
         )
     }
 }
@@ -430,18 +415,27 @@ internal fun DetalleSiniestroScreenPreview() {
 internal fun DetalleSiniestroCerradoPreview() {
     SegurosBpoTheme {
         DetalleSiniestroScreen(
-            siniestro = Muestras.siniestroCerrado,
+            siniestro = Muestras.siniestrosApi.last(),
             solicitudes = emptyList(),
             consultasPendientes = 0,
-            evaluacion = Muestras.evaluacion,
+            evaluacion = Muestras.evaluacionApi,
+            documentosDelTipo = emptyList(),
             onCargarSolicitudes = {},
             onVolver = {},
             onEditar = {},
             onEvidencias = {},
             onHistorial = {},
             onConsultas = {},
-            onDesistir = { null },
-            onGuardarEvaluacion = { _, _ -> null }
+            onDesistir = {},
+            onGuardarEvaluacion = { _, _ -> }
         )
     }
+}
+
+private fun etiquetaEtapa(etapa: String): String = when (etapa) {
+    "RECIBIDO" -> "Recibido"
+    "EVALUACION" -> "En evaluación"
+    "LIQUIDACION" -> "En liquidación"
+    "CERRADO" -> "Cerrado"
+    else -> etapa
 }

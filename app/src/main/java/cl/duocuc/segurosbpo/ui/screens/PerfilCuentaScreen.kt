@@ -217,11 +217,6 @@ fun PerfilCuentaScreen(
                     Text("Ir a Ajustes")
                 }
             }
-
-            OutlinedButton(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = onCerrarSesion
-            ) { Text("Cambiar de usuario") }
         }
     }
 }

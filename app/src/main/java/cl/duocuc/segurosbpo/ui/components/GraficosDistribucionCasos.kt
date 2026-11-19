@@ -11,7 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import cl.duocuc.segurosbpo.model.EstadisticasCasos
 import cl.duocuc.segurosbpo.model.PuntoEstadistico
-import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.data.remote.SiniestroResponse
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 
 @Composable
@@ -32,13 +32,13 @@ private fun GraficoFilasEstadisticas(puntos: List<PuntoEstadistico>) {
 }
 
 @Composable
-fun GraficosDistribucionCasos(casos: List<Siniestro>) {
+fun GraficosDistribucionCasos(casos: List<SiniestroResponse>) {
     val puntos = remember(casos) { EstadisticasCasos.porTipo(casos) }
     GraficoFilasEstadisticas(puntos)
 }
 
 @Composable
-fun GraficoEvolucionCasos(casos: List<Siniestro>) {
+fun GraficoEvolucionCasos(casos: List<SiniestroResponse>) {
     val puntos = remember(casos) { EstadisticasCasos.porMes(casos) }
     GraficoFilasEstadisticas(puntos)
 }

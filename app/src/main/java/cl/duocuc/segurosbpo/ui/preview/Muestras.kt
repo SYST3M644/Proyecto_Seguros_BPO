@@ -1,5 +1,13 @@
 package cl.duocuc.segurosbpo.ui.preview
 
+import cl.duocuc.segurosbpo.data.remote.AvisoResponse
+import cl.duocuc.segurosbpo.data.remote.CargaLiquidadorResponse
+import cl.duocuc.segurosbpo.data.remote.ConsultaResponse
+import cl.duocuc.segurosbpo.data.remote.EvaluacionResponse
+import cl.duocuc.segurosbpo.data.remote.GestionResponse
+import cl.duocuc.segurosbpo.data.remote.EvidenciaResponse
+import cl.duocuc.segurosbpo.data.remote.SolicitudResponse
+import cl.duocuc.segurosbpo.data.remote.SiniestroResponse
 import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.AvisoSiniestro
 import cl.duocuc.segurosbpo.model.Consulta
@@ -189,5 +197,113 @@ object Muestras {
             fecha = FECHA_HORA,
             leido = true
         )
+    )
+
+    val siniestrosApi = listOf(
+        casoApi("SIN-26-004861", "Seguros Cordillera", "Vehículo · choque", "EVALUACION"),
+        casoApi("SIN-26-004862", "Protege Seguros", "Hogar · robo", "RECIBIDO"),
+        casoApi("SIN-26-004863", "Seguros Cordillera", "Hogar · incendio", "CERRADO")
+    )
+
+    private fun casoApi(
+        numero: String,
+        compania: String,
+        tipo: String,
+        etapa: String
+    ) = SiniestroResponse(
+        id = numero,
+        numero = numero,
+        aseguradoId = "1",
+        aseguradoNombre = "Camila Rojas Fuentes",
+        companiaCodigo = "CORDILLERA",
+        companiaNombre = compania,
+        plazoDiasHabiles = 10,
+        tipoCodigo = "CHOQUE",
+        tipoNombre = tipo,
+        fechaOcurrencia = "10-11-2026",
+        fechaReporte = "12-11-2026",
+        comuna = "Quilicura",
+        descripcion = "Colisión leve en el estacionamiento",
+        huboTerceros = false,
+        etapa = etapa,
+        liquidadorId = null,
+        liquidadorNombre = null,
+        resultadoCierre = null,
+        mensajeCierre = null,
+        ultimaActualizacion = FECHA_HORA
+    )
+
+    val avisosApi = listOf(
+        AvisoResponse(
+            id = "1", siniestroId = "1", numero = "SIN-26-004861",
+            destinatarioId = "1", mensaje = "Tu caso avanzó a en evaluación",
+            fecha = FECHA_HORA, leido = false
+        ),
+        AvisoResponse(
+            id = "2", siniestroId = "1", numero = "SIN-26-004861",
+            destinatarioId = "1", mensaje = "Te piden un documento: Boleta del taller",
+            fecha = FECHA_HORA, leido = true
+        )
+    )
+
+    val consultasApi = listOf(
+        ConsultaResponse(
+            id = "1", siniestroId = "1",
+            pregunta = "¿Cuánto demora la evaluación del vehículo?",
+            respuesta = "Entre cinco y siete días hábiles desde la inspección.",
+            fechaPregunta = FECHA_HORA, fechaRespuesta = FECHA_HORA
+        ),
+        ConsultaResponse(
+            id = "2", siniestroId = "1",
+            pregunta = "¿Necesitan algún documento adicional?",
+            respuesta = null, fechaPregunta = FECHA_HORA, fechaRespuesta = null
+        )
+    )
+
+    val solicitudesApi = listOf(
+        SolicitudResponse(
+            id = "1", siniestroId = "1", tipoDocumento = "Boleta del taller",
+            comentario = "La necesitamos para liquidar", solicitadoPor = "Maria P. Lagos",
+            fecha = FECHA_HORA, estado = "PENDIENTE"
+        ),
+        SolicitudResponse(
+            id = "2", siniestroId = "1", tipoDocumento = "Constancia policial",
+            comentario = "", solicitadoPor = "Maria P. Lagos",
+            fecha = FECHA_HORA, estado = "RECIBIDA"
+        )
+    )
+
+    val evidenciasApi = listOf(
+        EvidenciaResponse(
+            id = "1", siniestroId = "1", tipoDocumento = "Fotografías de los daños",
+            nombreArchivo = "frontal.jpg", mime = "image/jpeg", tamanoBytes = 184320,
+            fechaRegistro = FECHA_HORA, subidoPor = "Camila Rojas Fuentes",
+            archivoUrl = ""
+        )
+    )
+
+    val cargaApi = listOf(
+        CargaLiquidadorResponse("1", "Maria P. Lagos", "VEHICULOS", 4, 9),
+        CargaLiquidadorResponse("2", "Pedro C. Rivas", "HOGAR", 2, 5)
+    )
+
+    val gestionesApi = listOf(
+        GestionResponse(
+            id = "1", siniestroId = "1", fecha = FECHA_HORA,
+            responsable = "Camila Rojas Fuentes",
+            descripcion = "Reporte registrado con número SIN-26-004861",
+            visibleAsegurado = true
+        ),
+        GestionResponse(
+            id = "2", siniestroId = "1", fecha = FECHA_HORA,
+            responsable = "Analista de administración",
+            descripcion = "Caso asignado a Maria P. Lagos",
+            visibleAsegurado = true
+        )
+    )
+
+    val evaluacionApi = EvaluacionResponse(
+        id = "1", siniestroId = "1", nota = 5,
+        comentario = "Muy buena atención", fecha = FECHA_HORA
     )
 }

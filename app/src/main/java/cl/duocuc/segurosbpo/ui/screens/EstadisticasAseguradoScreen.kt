@@ -13,7 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.data.remote.SiniestroResponse
 import cl.duocuc.segurosbpo.ui.components.ResumenGraficosCasos
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
@@ -23,7 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EstadisticasAseguradoScreen(
-    siniestros: List<Siniestro>,
+    siniestros: List<SiniestroResponse>,
     onVolver: () -> Unit
 ) {
     Scaffold(
@@ -46,6 +46,6 @@ fun EstadisticasAseguradoScreen(
 @Composable
 internal fun EstadisticasAseguradoScreenPreview() {
     SegurosBpoTheme {
-        EstadisticasAseguradoScreen(siniestros = Muestras.siniestros, onVolver = {})
+        EstadisticasAseguradoScreen(siniestros = Muestras.siniestrosApi, onVolver = {})
     }
 }

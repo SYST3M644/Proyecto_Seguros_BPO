@@ -45,7 +45,7 @@ import androidx.compose.ui.tooling.preview.Preview
 fun LiquidadoresScreen(
     liquidadores: List<CuentaLocal>,
     carga: Map<String, Int>,
-    onCrear: (String, Liquidador, String) -> String?
+    onCrear: (String, Liquidador, String, (String?, String) -> Unit) -> Unit
 ) {
     val aviso = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -121,14 +121,17 @@ fun LiquidadoresScreen(
                             modifier = Modifier.fillMaxWidth(),
                             enabled = puedeCrear,
                             onClick = {
-                                val error = onCrear(nombre, equipoElegido, telefono)
-                                scope.launch {
-                                    aviso.showSnackbar(error ?: "Liquidador agregado")
-                                }
-                                if (error == null) {
-                                    nombre = ""
-                                    telefono = ""
-                                    tocado = false
+                                onCrear(nombre, equipoElegido, telefono) { error, credenciales ->
+                                    scope.launch {
+                                        aviso.showSnackbar(
+                                            error ?: "Liquidador agregado. Entra con $credenciales"
+                                        )
+                                    }
+                                    if (error == null) {
+                                        nombre = ""
+                                        telefono = ""
+                                        tocado = false
+                                    }
                                 }
                             }
                         ) { Text("Agregar al equipo") }
@@ -175,7 +178,7 @@ fun LiquidadoresScreen(
                                         )
                                     }
                                     Text(
-                                        (carga[cuenta.id] ?: 0).toString() + " caso(s)",
+                                        (carga[cuenta.nombre] ?: 0).toString() + " caso(s) abiertos",
                                         style = MaterialTheme.typography.bodyMedium
                                     )
                                 }
@@ -196,7 +199,7 @@ internal fun LiquidadoresScreenPreview() {
         LiquidadoresScreen(
             liquidadores = listOf(Muestras.liquidadora, Muestras.liquidador),
             carga = Muestras.cargaPorPersona,
-            onCrear = { _, _, _ -> null }
+            onCrear = { _, _, _, listo -> listo(null, "") }
         )
     }
 }

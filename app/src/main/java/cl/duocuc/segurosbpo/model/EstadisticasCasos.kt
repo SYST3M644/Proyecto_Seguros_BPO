@@ -1,14 +1,16 @@
 package cl.duocuc.segurosbpo.model
 
+import cl.duocuc.segurosbpo.data.remote.SiniestroResponse
+
 data class PuntoEstadistico(val etiqueta: String, val cantidad: Int)
 
 object EstadisticasCasos {
-    fun porTipo(siniestros: List<Siniestro>): List<PuntoEstadistico> =
-        siniestros.groupingBy { it.tipo.etiqueta }.eachCount()
+    fun porTipo(siniestros: List<SiniestroResponse>): List<PuntoEstadistico> =
+        siniestros.groupingBy { it.tipoNombre ?: it.tipoCodigo }.eachCount()
             .entries.sortedByDescending { it.value }
             .map { PuntoEstadistico(it.key, it.value) }
 
-    fun porMes(siniestros: List<Siniestro>): List<PuntoEstadistico> {
+    fun porMes(siniestros: List<SiniestroResponse>): List<PuntoEstadistico> {
         return siniestros.mapNotNull { siniestro ->
             val fecha = siniestro.fechaReporte
             if (!Regex("[0-9]{2}-[0-9]{2}-[0-9]{4}").matches(fecha.take(10))) null

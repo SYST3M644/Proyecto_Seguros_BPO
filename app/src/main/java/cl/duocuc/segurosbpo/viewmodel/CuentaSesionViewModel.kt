@@ -2,11 +2,10 @@ package cl.duocuc.segurosbpo.viewmodel
 
 import android.app.Application
 import android.graphics.Bitmap
-import java.io.ByteArrayOutputStream
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import cl.duocuc.segurosbpo.data.ArchivoRepository
-import cl.duocuc.segurosbpo.data.CuentaDbHelper
+import cl.duocuc.segurosbpo.data.SesionRepository
 import cl.duocuc.segurosbpo.data.remote.UsuarioResponse
 import cl.duocuc.segurosbpo.model.CuentaLocal
 import cl.duocuc.segurosbpo.model.Liquidador
@@ -14,74 +13,83 @@ import cl.duocuc.segurosbpo.model.RolCuenta
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 
 class CuentaSesionViewModel(application: Application) : AndroidViewModel(application) {
-    private val db = CuentaDbHelper(application)
-    private val preferencias = application.getSharedPreferences("cuenta_sesion_local", 0)
+
+    private companion object {
+        const val ROL_LIQUIDADOR = "2"
+        const val CLAVE_INICIAL = "123456"
+        const val ACENTOS = "áéíóúñü"
+        const val ACENTOS_SIN = "aeiounu"
+    }
+
     private val archivos = ArchivoRepository()
+    private val sesion = SesionRepository()
 
-    private fun cargar(): List<CuentaLocal> =
-        runCatching { db.listar() }.getOrDefault(emptyList())
-
-    private val _usuarios = MutableStateFlow(cargar())
+    private val _usuarios = MutableStateFlow<List<CuentaLocal>>(emptyList())
     val usuarios = _usuarios.asStateFlow()
 
-    private val _cuenta = MutableStateFlow(
-        preferencias.getString("cuenta_id", null)?.let { id ->
-            _usuarios.value.firstOrNull { it.id == id }
-        }
-    )
+    private val _cuenta = MutableStateFlow<CuentaLocal?>(null)
     val cuenta = _cuenta.asStateFlow()
 
-    init {
-        if (_cuenta.value == null && preferencias.contains("cuenta_id")) {
-            preferencias.edit().remove("cuenta_id").apply()
-        }
-    }
-
     fun iniciarSesionRemota(usuario: UsuarioResponse) {
-        val rol = when (usuario.rolId) {
-            "2" -> RolCuenta.LIQUIDADOR
-            "3" -> RolCuenta.ANALISTA
-            else -> RolCuenta.ASEGURADO
+        _cuenta.value = aCuenta(usuario)
+        cargarUsuarios()
+    }
+
+    fun cargarUsuarios() {
+        viewModelScope.launch {
+            runCatching { sesion.listarUsuarios() }
+                .onSuccess { lista -> _usuarios.value = lista.map { aCuenta(it) } }
         }
-        val cuenta = CuentaLocal(
-            id = "API_" + usuario.id,
-            nombre = usuario.nombre,
-            rut = usuario.rut.orEmpty(),
-            correo = usuario.correo,
-            telefono = "",
-            rol = rol,
-            equipo = usuario.equipo,
-            avatarUrl = usuario.avatarUrl
-        )
-        preferencias.edit().putString("cuenta_id", cuenta.id).apply()
-        _usuarios.value = (_usuarios.value.filterNot { it.id == cuenta.id }) + cuenta
-        _cuenta.value = cuenta
     }
 
-    fun seleccionar(id: String) {
-        val elegido = _usuarios.value.firstOrNull { it.id == id } ?: return
-        preferencias.edit().putString("cuenta_id", elegido.id).apply()
-        _cuenta.value = elegido
+    fun actualizarContacto(correo: String, telefono: String) {
+        _cuenta.value = _cuenta.value?.copy(correo = correo, telefono = telefono)
     }
 
-    fun actualizarTelefono(telefono: String): String? {
-        val actual = _cuenta.value ?: return "Elige un usuario"
-        val resultado = runCatching { db.actualizarTelefono(actual.id, telefono) }
-        return resultado.fold(
-            onSuccess = { _cuenta.value = it; _usuarios.value = cargar(); null },
-            onFailure = { mensajeError(it, "No se pudo guardar") }
-        )
+    fun guardarPerfilEnServidor(
+        nombre: String,
+        correo: String,
+        rut: String,
+        onListo: (String?) -> Unit
+    ) {
+        val actual = _cuenta.value
+        val id = actual?.id?.removePrefix("API_")
+        if (actual == null || id.isNullOrBlank()) {
+            onListo("Inicia sesión para editar tu perfil")
+            return
+        }
+        viewModelScope.launch {
+            runCatching { sesion.actualizarPerfil(id, nombre, correo, rut, actual.equipo) }.fold(
+                onSuccess = { usuario ->
+                    _cuenta.value = actual.copy(
+                        nombre = usuario.nombre,
+                        correo = usuario.correo,
+                        rut = usuario.rut.orEmpty()
+                    )
+                    onListo(null)
+                },
+                onFailure = { onListo(it.message ?: "No se pudo guardar el perfil") }
+            )
+        }
     }
 
-    fun actualizarContacto(correo: String, telefono: String): String? {
-        val actual = _cuenta.value ?: return "Elige un usuario"
-        val resultado = runCatching { db.actualizarContacto(actual.id, correo, telefono) }
-        return resultado.fold(
-            onSuccess = { _cuenta.value = it; _usuarios.value = cargar(); null },
-            onFailure = { mensajeError(it, "No se pudo guardar") }
-        )
+    fun cambiarContrasena(actual: String, nueva: String, onListo: (String?) -> Unit) {
+        val id = _cuenta.value?.id?.removePrefix("API_")
+        if (id.isNullOrBlank()) {
+            onListo("Inicia sesión para cambiar tu contraseña")
+            return
+        }
+        if (nueva.length < 6) {
+            onListo("La nueva contraseña debe tener mínimo 6 caracteres")
+            return
+        }
+        viewModelScope.launch {
+            val resultado = runCatching { sesion.cambiarContrasena(id, actual, nueva) }
+            onListo(resultado.exceptionOrNull()?.message)
+        }
     }
 
     fun subirFotoAlServidor(bitmap: Bitmap, onListo: (String?) -> Unit) {
@@ -93,13 +101,13 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
         }
         val salida = ByteArrayOutputStream()
         if (!runCatching { bitmap.compress(Bitmap.CompressFormat.JPEG, 82, salida) }
-                .getOrDefault(false)) {
+                .getOrDefault(false)
+        ) {
             onListo("No se pudo procesar la fotografía")
             return
         }
         viewModelScope.launch {
-            val resultado = runCatching { archivos.subirAvatar(id, salida.toByteArray()) }
-            resultado.fold(
+            runCatching { archivos.subirAvatar(id, salida.toByteArray()) }.fold(
                 onSuccess = { usuario ->
                     _cuenta.value = actual.copy(avatarUrl = usuario.avatarUrl, foto = null)
                     onListo(null)
@@ -109,40 +117,54 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
-    fun actualizarFoto(bitmap: Bitmap): String? {
-        val actual = _cuenta.value ?: return "Elige un usuario"
-        val salida = ByteArrayOutputStream()
-        if (!runCatching { bitmap.compress(Bitmap.CompressFormat.JPEG, 82, salida) }
-                .getOrDefault(false)) {
-            return "No se pudo procesar la fotografía"
+    fun crearLiquidadorEnServidor(
+        nombre: String,
+        equipo: Liquidador,
+        telefono: String,
+        onListo: (String?, String) -> Unit
+    ) {
+        val correo = correoCorporativo(nombre)
+        viewModelScope.launch {
+            runCatching {
+                sesion.registrar(nombre, correo, CLAVE_INICIAL, "", equipo.name, ROL_LIQUIDADOR)
+            }.fold(
+                onSuccess = {
+                    cargarUsuarios()
+                    onListo(null, "$correo / $CLAVE_INICIAL")
+                },
+                onFailure = { onListo(it.message ?: "No se pudo crear el liquidador", "") }
+            )
         }
-        val resultado = runCatching { db.actualizarFoto(actual.id, salida.toByteArray()) }
-        return resultado.fold(
-            onSuccess = { _cuenta.value = it; _usuarios.value = cargar(); null },
-            onFailure = { mensajeError(it, "No se pudo guardar la foto") }
-        )
     }
-
-    fun crearLiquidador(nombre: String, equipo: Liquidador, telefono: String): String? {
-        val resultado = runCatching { db.crearLiquidador(nombre, equipo, telefono) }
-        return resultado.fold(
-            onSuccess = { _usuarios.value = cargar(); null },
-            onFailure = { mensajeError(it, "No se pudo crear el liquidador") }
-        )
-    }
-
-    fun liquidadoresDe(equipo: Liquidador): List<CuentaLocal> =
-        _usuarios.value.filter {
-            it.rol == RolCuenta.LIQUIDADOR && it.equipo == equipo.name
-        }
 
     fun cerrarSesion() {
-        preferencias.edit().remove("cuenta_id").apply()
         _cuenta.value = null
+        _usuarios.value = emptyList()
     }
 
-    override fun onCleared() {
-        db.close()
-        super.onCleared()
+    private fun aCuenta(usuario: UsuarioResponse) = CuentaLocal(
+        id = "API_" + usuario.id,
+        nombre = usuario.nombre,
+        rut = usuario.rut.orEmpty(),
+        correo = usuario.correo,
+        telefono = "",
+        rol = when (usuario.rolId) {
+            "2" -> RolCuenta.LIQUIDADOR
+            "3" -> RolCuenta.ANALISTA
+            else -> RolCuenta.ASEGURADO
+        },
+        equipo = usuario.equipo,
+        avatarUrl = usuario.avatarUrl
+    )
+
+    private fun correoCorporativo(nombre: String): String {
+        val partes = nombre.trim().lowercase().split(" ").filter { it.isNotBlank() }
+        val inicial = partes.firstOrNull()?.take(1).orEmpty()
+        val apellido = partes.lastOrNull().orEmpty()
+        val limpio = (inicial + apellido)
+            .map { if (it in ACENTOS) ACENTOS_SIN[ACENTOS.indexOf(it)] else it }
+            .joinToString("")
+            .filter { it.isLetterOrDigit() }
+        return "$limpio@segurosbpo.cl"
     }
 }

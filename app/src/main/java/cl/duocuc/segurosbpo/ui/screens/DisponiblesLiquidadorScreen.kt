@@ -24,8 +24,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import cl.duocuc.segurosbpo.model.Liquidador
-import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.data.remote.SiniestroResponse
 import cl.duocuc.segurosbpo.model.coincideCon
 import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
@@ -40,13 +39,13 @@ import androidx.compose.ui.tooling.preview.Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DisponiblesLiquidadorScreen(
-    liquidador: Liquidador,
-    disponibles: List<Siniestro>,
-    onTomarCaso: (Long) -> String?
+    equipo: String,
+    disponibles: List<SiniestroResponse>,
+    onTomarCaso: (String) -> Unit
 ) {
     val aviso = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    var busqueda by rememberSaveable(liquidador) { mutableStateOf("") }
+    var busqueda by rememberSaveable(equipo) { mutableStateOf("") }
 
     Scaffold(
         topBar = { BarraSuperior("Casos disponibles") }
@@ -58,14 +57,19 @@ fun DisponiblesLiquidadorScreen(
             verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
         ) {
             Text(
-                "Sin asignar en " + liquidador.equipo,
+                "Sin asignar en " + equipo,
                 style = MaterialTheme.typography.titleLarge
             )
             if (disponibles.isNotEmpty()) {
                 BuscadorCasos(texto = busqueda, onTexto = { busqueda = it })
             }
 
-            val visibles = disponibles.filter { it.coincideCon(busqueda) }
+            val texto = busqueda.trim().lowercase()
+            val visibles = disponibles.filter { caso ->
+                texto.isEmpty() || listOfNotNull(
+                    caso.numero, caso.tipoNombre, caso.comuna, caso.aseguradoNombre
+                ).any { it.lowercase().contains(texto) }
+            }
 
             if (disponibles.isEmpty()) {
                 Text("No hay siniestros pendientes de asignación en tu área.")
@@ -84,16 +88,11 @@ fun DisponiblesLiquidadorScreen(
                         verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
                     ) {
                         CodigoSiniestro(disponible.numero)
-                        Text(disponible.tipo.etiqueta)
+                        Text(disponible.tipoNombre ?: disponible.tipoCodigo)
                         Text("Recibido · Sin liquidador asignado")
-                        Button(onClick = {
-                            val error = onTomarCaso(disponible.id)
-                            scope.launch {
-                                aviso.showSnackbar(
-                                    error ?: "Caso asignado. Ya puedes gestionarlo."
-                                )
-                            }
-                        }) { Text("Tomar caso") }
+                        Button(onClick = { onTomarCaso(disponible.id) }) {
+                            Text("Tomar caso")
+                        }
                     }
                 }
             }
@@ -108,9 +107,9 @@ fun DisponiblesLiquidadorScreen(
 internal fun DisponiblesLiquidadorScreenPreview() {
     SegurosBpoTheme {
         DisponiblesLiquidadorScreen(
-            liquidador = Liquidador.VEHICULOS,
-            disponibles = listOf(Muestras.siniestroRecibido),
-            onTomarCaso = { null }
+            equipo = "VEHICULOS",
+            disponibles = Muestras.siniestrosApi,
+            onTomarCaso = {}
         )
     }
 }

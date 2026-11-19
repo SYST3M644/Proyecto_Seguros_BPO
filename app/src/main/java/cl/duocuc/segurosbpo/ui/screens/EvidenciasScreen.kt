@@ -55,11 +55,9 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import cl.duocuc.segurosbpo.permisos.Permisos
-import cl.duocuc.segurosbpo.model.Asegurado
-import cl.duocuc.segurosbpo.model.EtapaSiniestro
-import cl.duocuc.segurosbpo.model.Evidencia
-import cl.duocuc.segurosbpo.model.Siniestro
-import cl.duocuc.segurosbpo.model.SolicitudDocumento
+import cl.duocuc.segurosbpo.data.remote.EvidenciaResponse
+import cl.duocuc.segurosbpo.data.remote.SiniestroResponse
+import cl.duocuc.segurosbpo.data.remote.SolicitudResponse
 import kotlinx.coroutines.launch
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
@@ -141,17 +139,17 @@ private fun nombreDeArchivo(contexto: Context, uri: Uri): String {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EvidenciasScreen(
-    siniestro: Siniestro?,
-    asegurado: Asegurado,
-    evidencias: List<Evidencia>,
-    solicitudes: List<SolicitudDocumento> = emptyList(),
+    siniestro: SiniestroResponse?,
+    documentosDelTipo: List<String>,
+    evidencias: List<EvidenciaResponse>,
+    solicitudes: List<SolicitudResponse> = emptyList(),
     onVolver: () -> Unit,
     onCargar: () -> Unit,
-    onCargarImagen: suspend (Long) -> Bitmap?,
-    onCargarMiniatura: suspend (Long) -> Bitmap?,
+    onCargarImagen: suspend (String) -> Bitmap?,
+    onCargarMiniatura: suspend (String) -> Bitmap?,
     onGuardarFoto: suspend (String, Bitmap) -> String?,
     onGuardarArchivo: suspend (String, Uri) -> String?,
-    onEliminar: (Long) -> String?
+    onEliminar: (String) -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -159,12 +157,12 @@ fun EvidenciasScreen(
     var tipoDocumento by rememberSaveable(siniestro?.id) { mutableStateOf("") }
     var mostrarError by rememberSaveable(siniestro?.id) { mutableStateOf(false) }
     var imagenVista by remember(siniestro?.id) { mutableStateOf<Bitmap?>(null) }
-    var porEliminar by remember(siniestro?.id) { mutableStateOf<Evidencia?>(null) }
+    var porEliminar by remember(siniestro?.id) { mutableStateOf<EvidenciaResponse?>(null) }
     var porEnviar by remember(siniestro?.id) { mutableStateOf<List<AdjuntoPendiente>>(emptyList()) }
     var enviando by remember(siniestro?.id) { mutableStateOf(false) }
     var enviados by remember(siniestro?.id) { mutableStateOf(0) }
 
-    LaunchedEffect(siniestro?.id, asegurado) { onCargar() }
+    LaunchedEffect(siniestro?.id) { onCargar() }
 
     val cupoLibre = 15 - evidencias.size - porEnviar.size
 
@@ -299,9 +297,8 @@ fun EvidenciasScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    val error = onEliminar(objetivo.id)
+                    onEliminar(objetivo.id)
                     porEliminar = null
-                    avisar(error ?: "Documento eliminado")
                 }) { Text("Eliminar") }
             },
             dismissButton = {
@@ -318,12 +315,12 @@ fun EvidenciasScreen(
                 verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
             ) {
                 if (siniestro == null) {
-                    Text("Este siniestro no pertenece al asegurado seleccionado")
+                    Text("No encontramos este siniestro")
                     return@Column
                 }
 
-                val cerrado = siniestro.etapa == EtapaSiniestro.CERRADO
-                val pendientes = solicitudes.filter { it.pendiente }
+                val cerrado = siniestro.etapa == "CERRADO"
+                val pendientes = solicitudes.filter { it.estado == "PENDIENTE" }
 
                 CodigoSiniestro(siniestro.numero, estilo = MaterialTheme.typography.titleLarge)
 
@@ -368,18 +365,18 @@ fun EvidenciasScreen(
                             )
                             pendientes.forEach { solicitud ->
                                 FilterChip(
-                                    selected = tipoDocumento == solicitud.tipo,
+                                    selected = tipoDocumento == solicitud.tipoDocumento,
                                     onClick = {
-                                        tipoDocumento = solicitud.tipo
+                                        tipoDocumento = solicitud.tipoDocumento
                                         mostrarError = false
                                     },
-                                    label = { Text(solicitud.tipo) },
+                                    label = { Text(solicitud.tipoDocumento) },
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
                         }
-                        val habituales = siniestro.tipo.documentosHabituales.filter { documento ->
-                            pendientes.none { it.tipo.equals(documento, ignoreCase = true) }
+                        val habituales = documentosDelTipo.filter { documento ->
+                            pendientes.none { it.tipoDocumento.equals(documento, ignoreCase = true) }
                         }
                         if (habituales.isNotEmpty()) {
                             Text(
@@ -407,7 +404,7 @@ fun EvidenciasScreen(
                             isError = mostrarError,
                             supportingText = {
                                 val calza = pendientes.any {
-                                    it.tipo.equals(tipoDocumento.trim(), ignoreCase = true)
+                                    it.tipoDocumento.equals(tipoDocumento.trim(), ignoreCase = true)
                                 }
                                 Text(
                                     when {
@@ -531,7 +528,7 @@ fun EvidenciasScreen(
                             nombre = evidencia.nombreArchivo,
                             detalle = evidencia.fechaRegistro + " · " +
                                 (evidencia.tamanoBytes / 1024) + " KB",
-                            esImagen = previsualizable(evidencia.tipoMime),
+                            esImagen = previsualizable(evidencia.mime),
                             cargarMiniatura = { onCargarMiniatura(evidencia.id) },
                             onAbrir = {
                                 scope.launch {
@@ -637,17 +634,17 @@ private fun BloqueEvidencias(titulo: String, contenido: @Composable () -> Unit) 
 internal fun EvidenciasScreenPreview() {
     SegurosBpoTheme {
         EvidenciasScreen(
-            siniestro = Muestras.siniestroEnEvaluacion,
-            asegurado = Asegurado.CAMILA,
-            evidencias = Muestras.evidencias,
-            solicitudes = Muestras.solicitudes,
+            siniestro = Muestras.siniestrosApi.first(),
+            documentosDelTipo = listOf("Fotografías de los daños"),
+            evidencias = Muestras.evidenciasApi,
+            solicitudes = Muestras.solicitudesApi,
             onVolver = {},
             onCargar = {},
             onCargarImagen = { null },
             onCargarMiniatura = { null },
             onGuardarFoto = { _, _ -> null },
             onGuardarArchivo = { _, _ -> null },
-            onEliminar = { null }
+            onEliminar = {}
         )
     }
 }

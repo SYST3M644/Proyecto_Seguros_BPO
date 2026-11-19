@@ -12,174 +12,158 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import cl.duocuc.segurosbpo.model.ControlPlazos
-import cl.duocuc.segurosbpo.model.CuentaLocal
-import cl.duocuc.segurosbpo.model.Liquidador
-import cl.duocuc.segurosbpo.model.Siniestro
-import cl.duocuc.segurosbpo.model.coincideCon
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
-import cl.duocuc.segurosbpo.ui.components.BuscadorCasos
-import androidx.compose.ui.tooling.preview.Preview
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
-import cl.duocuc.segurosbpo.ui.preview.Muestras
-import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import cl.duocuc.segurosbpo.ui.components.BuscadorCasos
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
-import kotlinx.coroutines.launch
 import cl.duocuc.segurosbpo.ui.theme.Dimens
+import cl.duocuc.segurosbpo.viewmodel.SiniestrosViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AsignacionCasosScreen(
-    pendientes: List<Siniestro>,
-    carga: Map<Liquidador, Int>,
-    equipos: Map<Liquidador, List<CuentaLocal>>,
-    cargaPersonas: Map<String, Int>,
-    actualizadoEn: String,
-    onCargar: () -> Unit,
-    onAsignar: (Long, Liquidador, String, String) -> String?
-) {
+fun AsignacionCasosScreen(viewModel: SiniestrosViewModel) {
+    val pendientes by viewModel.siniestros.collectAsStateWithLifecycle()
+    val liquidadores by viewModel.liquidadores.collectAsStateWithLifecycle()
+    val cargando by viewModel.cargando.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
+    val mensaje by viewModel.aviso.collectAsStateWithLifecycle()
     val aviso = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
     var busqueda by rememberSaveable { mutableStateOf("") }
 
-    LaunchedEffect(Unit) { onCargar() }
+    val visibles = remember(pendientes, busqueda) {
+        val texto = busqueda.trim().lowercase()
+        if (texto.isEmpty()) pendientes
+        else pendientes.filter { caso ->
+            listOfNotNull(
+                caso.numero, caso.tipoNombre, caso.comuna,
+                caso.aseguradoNombre, caso.companiaNombre
+            ).any { it.lowercase().contains(texto) }
+        }
+    }
+
+    LaunchedEffect(Unit) { viewModel.cargarSinAsignar() }
+
+    LaunchedEffect(mensaje) {
+        mensaje?.let {
+            aviso.showSnackbar(it)
+            viewModel.limpiarAviso()
+        }
+    }
 
     Scaffold(
-        topBar = { BarraSuperior("Casos por asignar") }
+        topBar = { BarraSuperior(stringResource(R.string.titulo_asignar)) }
     ) { margen ->
         Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
-        Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                .padding(Dimens.espacioMedio),
-            verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
-        ) {
-            Text(
-                "Casos sin liquidador: " + pendientes.size,
-                style = MaterialTheme.typography.titleLarge
-            )
-            Text("Datos al " + actualizadoEn, style = MaterialTheme.typography.bodySmall)
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                    .padding(Dimens.espacioMedio),
+                verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
+            ) {
+                if (cargando) {
+                    CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
+                }
 
-            if (pendientes.isNotEmpty()) {
-                BuscadorCasos(texto = busqueda, onTexto = { busqueda = it })
-            }
-
-            val visibles = pendientes.filter { it.coincideCon(busqueda) }
-
-            if (pendientes.isEmpty()) {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(Dimens.espacioPantalla)) {
-                        Text("Todos los casos recibidos ya tienen equipo asignado.")
+                error?.let { texto ->
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(
+                            Modifier.padding(Dimens.espacioMedio),
+                            verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
+                        ) {
+                            Text(texto, color = MaterialTheme.colorScheme.error)
+                            OutlinedButton(onClick = {
+                                viewModel.limpiarError()
+                                viewModel.cargarSinAsignar()
+                            }) { Text(stringResource(R.string.btn_reintentar)) }
+                        }
                     }
                 }
-            } else if (visibles.isEmpty()) {
-                Text("Ningún caso coincide con la búsqueda.")
-            }
 
-            visibles.forEach { caso ->
-                val equipo = Liquidador.entries.first { it.esVehiculo == caso.tipo.esVehiculo }
-                val espera = ControlPlazos.diasHabilesTranscurridos(caso.fechaReporte)
-                Card(Modifier.fillMaxWidth()) {
-                    Column(
-                        Modifier.padding(Dimens.espacioMedio),
-                        verticalArrangement = Arrangement.spacedBy(Dimens.espacioCorto)
-                    ) {
-                        CodigoSiniestro(caso.numero)
-                        Text(caso.tipo.etiqueta)
-                        Text(caso.compania.etiqueta, style = MaterialTheme.typography.bodySmall)
-                        Text(
-                            "Asegurado: " + caso.asegurado.etiqueta,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        Text(
-                            "Reportado: " + caso.fechaReporte + " · " + espera +
-                                " día(s) hábil(es) en espera",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (espera >= 2) MaterialTheme.colorScheme.error
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            "Equipo " + equipo.equipo + " · " +
-                                (carga[equipo] ?: 0) + " caso(s) activos",
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                BuscadorCasos(busqueda) { busqueda = it }
 
-                        val candidatos = equipos[equipo].orEmpty()
-                        if (candidatos.isEmpty()) {
+                if (!cargando && error == null && visibles.isEmpty()) {
+                    Text(
+                        if (pendientes.isEmpty()) stringResource(R.string.vacio_sin_asignar)
+                        else stringResource(R.string.vacio_busqueda)
+                    )
+                }
+
+                visibles.forEach { caso ->
+                    val esVehiculo = caso.tipoCodigo.startsWith("CHOQUE") ||
+                        caso.tipoCodigo.startsWith("ROBO_VEHICULO") ||
+                        caso.tipoCodigo.startsWith("CRISTALES")
+                    val equipo = if (esVehiculo) "VEHICULOS" else "HOGAR"
+                    val candidatos = liquidadores.filter { it.equipo == equipo }
+
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(
+                            Modifier.padding(Dimens.espacioMedio),
+                            verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
+                        ) {
+                            CodigoSiniestro(caso.numero)
+                            Text(caso.tipoNombre ?: caso.tipoCodigo)
                             Text(
-                                "El equipo " + equipo.equipo + " no tiene liquidadores. " +
-                                    "Agrega uno antes de asignar este caso.",
-                                color = MaterialTheme.colorScheme.error,
+                                caso.companiaNombre ?: caso.companiaCodigo,
                                 style = MaterialTheme.typography.bodySmall
                             )
-                        } else {
                             Text(
-                                "Asignar a:",
-                                style = MaterialTheme.typography.titleSmall
+                                stringResource(
+                                    R.string.etiqueta_asegurado_actual,
+                                    caso.aseguradoNombre.orEmpty()
+                                ),
+                                style = MaterialTheme.typography.bodySmall
                             )
+
+                            if (candidatos.isEmpty()) {
+                                Text(
+                                    stringResource(R.string.etiqueta_sin_liquidadores),
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+
                             candidatos.forEach { persona ->
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
+                                    horizontalArrangement = Arrangement.spacedBy(
+                                        Dimens.espacioChico
+                                    ),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Column(Modifier.weight(1f)) {
-                                        Text(
-                                            persona.nombre,
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                        Text(
-                                            (cargaPersonas[persona.id] ?: 0).toString() +
-                                                " caso(s) activos",
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                    }
-                                    Button(onClick = {
-                                        val error = onAsignar(
-                                            caso.id, equipo, persona.id, persona.nombre
-                                        )
-                                        scope.launch {
-                                            aviso.showSnackbar(
-                                                error ?: ("Caso asignado a " + persona.nombre)
+                                    Text(persona.nombre, modifier = Modifier.weight(1f))
+                                    Button(
+                                        enabled = !cargando,
+                                        onClick = {
+                                            viewModel.asignar(
+                                                caso.id, persona.id, persona.nombre
                                             )
                                         }
-                                    }) { Text("Asignar") }
+                                    ) { Text(stringResource(R.string.btn_asignar)) }
                                 }
                             }
                         }
                     }
                 }
             }
+            AvisoSuperior(aviso)
         }
-        AvisoSuperior(aviso)
-        }
-    }
-}
-
-@Preview(showBackground = true, heightDp = 720)
-@Composable
-internal fun AsignacionCasosScreenPreview() {
-    SegurosBpoTheme {
-        AsignacionCasosScreen(
-            pendientes = listOf(Muestras.siniestroRecibido),
-            carga = Muestras.cargaPorEquipo,
-            equipos = Muestras.equipos,
-            cargaPersonas = Muestras.cargaPorPersona,
-            actualizadoEn = Muestras.FECHA_HORA,
-            onCargar = {},
-            onAsignar = { _, _, _, _ -> null }
-        )
     }
 }

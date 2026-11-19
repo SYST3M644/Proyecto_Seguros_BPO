@@ -30,10 +30,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
-import cl.duocuc.segurosbpo.model.Compania
-import cl.duocuc.segurosbpo.model.TipoSiniestro
+import cl.duocuc.segurosbpo.data.remote.CompaniaResponse
+import cl.duocuc.segurosbpo.data.remote.TipoSiniestroResponse
 import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
+import cl.duocuc.segurosbpo.ui.components.FilaCatalogo
+import cl.duocuc.segurosbpo.ui.components.ListaCatalogo
 import kotlinx.coroutines.launch
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
@@ -42,13 +44,14 @@ import androidx.compose.ui.tooling.preview.Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatalogoScreen(
-    companias: List<Compania>,
-    tipos: List<TipoSiniestro>,
-    onCrearCompania: (String, Int) -> String?,
-    onCrearTipo: (String, Boolean, List<String>) -> String?
+    companias: List<CompaniaResponse>,
+    tipos: List<TipoSiniestroResponse>,
+    onCrearCompania: (String, Int) -> Unit,
+    onCrearTipo: (String, Boolean, List<String>) -> Unit
 ) {
     val aviso = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var formulario by rememberSaveable { mutableStateOf("") }
     var nombreCompania by rememberSaveable { mutableStateOf("") }
     var plazo by rememberSaveable { mutableStateOf("10") }
     var nombreTipo by rememberSaveable { mutableStateOf("") }
@@ -63,7 +66,23 @@ fun CatalogoScreen(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Dimens.espacioMedio),
                 verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
             ) {
-                Card(Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
+                ) {
+                    Button(
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            formulario = if (formulario == "compania") "" else "compania"
+                        }
+                    ) { Text("Nueva compañía") }
+                    Button(
+                        modifier = Modifier.weight(1f),
+                        onClick = { formulario = if (formulario == "tipo") "" else "tipo" }
+                    ) { Text("Nuevo tipo") }
+                }
+
+                if (formulario == "compania") Card(Modifier.fillMaxWidth()) {
                     Column(
                         Modifier.padding(Dimens.espacioMedio),
                         verticalArrangement = Arrangement.spacedBy(Dimens.espacioJusto)
@@ -93,59 +112,27 @@ fun CatalogoScreen(
                             modifier = Modifier.fillMaxWidth(),
                             enabled = nombreCompania.trim().length >= 3 && plazoValido,
                             onClick = {
-                                val error = onCrearCompania(
-                                    nombreCompania, plazo.toIntOrNull() ?: 10
-                                )
-                                scope.launch {
-                                    aviso.showSnackbar(error ?: "Compañía agregada")
-                                }
-                                if (error == null) {
-                                    nombreCompania = ""
-                                    plazo = "10"
-                                }
+                                onCrearCompania(nombreCompania, plazo.toIntOrNull() ?: 10)
+                                nombreCompania = ""
+                                plazo = "10"
                             }
                         ) { Text("Agregar compañía") }
                     }
                 }
 
-                Card(Modifier.fillMaxWidth()) {
-                    Column(
-                        Modifier.padding(Dimens.espacioMedio),
-                        verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
-                    ) {
-                        Text(
-                            "Compañías registradas (" + companias.size + ")",
-                            style = MaterialTheme.typography.titleMedium
+                ListaCatalogo(
+                    titulo = "Compañías registradas",
+                    pista = "Nombre de la compañía",
+                    filas = companias.map { compania ->
+                        FilaCatalogo(
+                            titulo = compania.nombre,
+                            detalle = compania.plazoDiasHabiles.toString() + " días hábiles" +
+                                if (compania.activa) "" else " · no disponible"
                         )
-                        companias.forEachIndexed { indice, compania ->
-                            if (indice > 0) HorizontalDivider()
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(
-                                        compania.etiqueta,
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
-                                    if (!compania.activa) {
-                                        Text(
-                                            "No disponible",
-                                            color = MaterialTheme.colorScheme.error,
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                    }
-                                }
-                                Text(
-                                    compania.plazoDiasHabiles.toString() + " días",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                        }
                     }
-                }
+                )
 
-                Card(Modifier.fillMaxWidth()) {
+                if (formulario == "tipo") Card(Modifier.fillMaxWidth()) {
                     Column(
                         Modifier.padding(Dimens.espacioMedio),
                         verticalArrangement = Arrangement.spacedBy(Dimens.espacioJusto)
@@ -187,48 +174,29 @@ fun CatalogoScreen(
                             modifier = Modifier.fillMaxWidth(),
                             enabled = nombreTipo.trim().length >= 3,
                             onClick = {
-                                val error = onCrearTipo(
+                                onCrearTipo(
                                     nombreTipo,
                                     esVehiculo,
                                     documentos.split("\n")
                                 )
-                                scope.launch {
-                                    aviso.showSnackbar(error ?: "Tipo de siniestro agregado")
-                                }
-                                if (error == null) {
-                                    nombreTipo = ""
-                                    documentos = ""
-                                }
+                                nombreTipo = ""
+                                documentos = ""
                             }
                         ) { Text("Agregar tipo") }
                     }
                 }
 
-                Card(Modifier.fillMaxWidth()) {
-                    Column(
-                        Modifier.padding(Dimens.espacioMedio),
-                        verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
-                    ) {
-                        Text(
-                            "Tipos registrados (" + tipos.size + ")",
-                            style = MaterialTheme.typography.titleMedium
+                ListaCatalogo(
+                    titulo = "Tipos registrados",
+                    pista = "Nombre del tipo",
+                    filas = tipos.map { tipo ->
+                        FilaCatalogo(
+                            titulo = tipo.nombre,
+                            detalle = if (tipo.esVehiculo) "Equipo Vehículos" else "Equipo Hogar",
+                            extras = tipo.documentos
                         )
-                        tipos.forEachIndexed { indice, tipo ->
-                            if (indice > 0) HorizontalDivider()
-                            Text(tipo.etiqueta, style = MaterialTheme.typography.bodyLarge)
-                            Text(
-                                if (tipo.esVehiculo) "Equipo Vehículos" else "Equipo Hogar",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                            tipo.documentosHabituales.forEach { documento ->
-                                Text(
-                                    "· " + documento,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                        }
                     }
-                }
+                )
             }
             AvisoSuperior(aviso)
         }
@@ -240,10 +208,10 @@ fun CatalogoScreen(
 internal fun CatalogoScreenPreview() {
     SegurosBpoTheme {
         CatalogoScreen(
-            companias = Compania.semilla,
-            tipos = TipoSiniestro.semilla,
-            onCrearCompania = { _, _ -> null },
-            onCrearTipo = { _, _, _ -> null }
+            companias = emptyList(),
+            tipos = emptyList(),
+            onCrearCompania = { _, _ -> },
+            onCrearTipo = { _, _, _ -> }
         )
     }
 }

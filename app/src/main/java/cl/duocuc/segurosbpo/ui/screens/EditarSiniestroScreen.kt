@@ -20,8 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import cl.duocuc.segurosbpo.model.EtapaSiniestro
-import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.data.remote.SiniestroResponse
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 import cl.duocuc.segurosbpo.ui.preview.Muestras
@@ -30,7 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditarSiniestroScreen(
-    siniestro: Siniestro?,
+    siniestro: SiniestroResponse?,
     onVolver: () -> Unit,
     onGuardar: (String) -> Unit
 ) {
@@ -41,7 +40,7 @@ fun EditarSiniestroScreen(
             Modifier.fillMaxSize().padding(margen).imePadding().padding(Dimens.espacioMedio),
             verticalArrangement = Arrangement.spacedBy(Dimens.espacioRegular)
         ) {
-            if (siniestro == null || siniestro.etapa != EtapaSiniestro.RECIBIDO) {
+            if (siniestro == null || siniestro.etapa != "RECIBIDO") {
                 Text("Este reporte no se puede editar")
             } else {
                 CodigoSiniestro(siniestro.numero)
@@ -67,7 +66,7 @@ fun EditarSiniestroScreen(
 internal fun EditarSiniestroScreenPreview() {
     SegurosBpoTheme {
         EditarSiniestroScreen(
-            siniestro = Muestras.siniestroRecibido,
+            siniestro = Muestras.siniestrosApi[1],
             onVolver = {},
             onGuardar = {}
         )
