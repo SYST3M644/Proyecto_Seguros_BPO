@@ -20,7 +20,7 @@ class SiniestroRepositoryTest {
 
     @Test
     fun listarPorAsegurado_traeLosCasosConLosNombresResueltos() = runBlocking {
-        val casos = repositorio.listarPorAsegurado(1)
+        val casos = repositorio.listarPorAsegurado("1")
 
         assertEquals(2, casos.size)
         assertEquals("Seguros Cordillera", casos[0].companiaNombre)
@@ -29,7 +29,7 @@ class SiniestroRepositoryTest {
 
     @Test
     fun asignar_dejaElCasoEnEvaluacionConSuLiquidador() = runBlocking {
-        val asignado = repositorio.asignar(id = 2, liquidadorId = 11)
+        val asignado = repositorio.asignar(id = "2", liquidadorId = "11")
 
         assertEquals("11", asignado.liquidadorId)
         assertEquals("EVALUACION", asignado.etapa)
@@ -39,7 +39,7 @@ class SiniestroRepositoryTest {
     fun registrar_creaElCasoEnEtapaRecibidoYSinLiquidador() = runBlocking {
         val nuevo = repositorio.registrar(
             RegistrarSiniestroRequest(
-                aseguradoId = 1, companiaCodigo = "CORDILLERA",
+                aseguradoId = "1", companiaCodigo = "CORDILLERA",
                 tipoCodigo = "CHOQUE", fechaOcurrencia = "10-11-2026",
                 comuna = "Renca", descripcion = "Rayado en el costado",
                 huboTerceros = false
@@ -48,7 +48,7 @@ class SiniestroRepositoryTest {
 
         assertEquals("RECIBIDO", nuevo.etapa)
         assertEquals("Renca", nuevo.comuna)
-        assertEquals(3, repositorio.listarPorAsegurado(1).size)
+        assertEquals(3, repositorio.listarPorAsegurado("1").size)
     }
 
     @Test
@@ -56,7 +56,7 @@ class SiniestroRepositoryTest {
         apiFalsa.sinConexion = true
 
         val error = assertThrows(Exception::class.java) {
-            runBlocking { repositorio.listarPorAsegurado(1) }
+            runBlocking { repositorio.listarPorAsegurado("1") }
         }
 
         assertEquals("No se pudo conectar con el servidor", error.message)
